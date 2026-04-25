@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"C:\\\\Users\\\\khm06\\\\OneDrive\\\\바탕 화면\\\\keimyung-dashboard\")",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c \"import openpyxl; print\\('openpyxl ok'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python generate_dashboard.py)",
+      "Bash(start *)",
+      "Bash(python -c \"import openpyxl; print\\('ok'\\)\")"
+    ]
+  }
+}

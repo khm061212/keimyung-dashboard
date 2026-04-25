@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계명대학교 취업통계 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-base: #f4f6fb;
+  --bg-card: #ffffff;
+  --sidebar-bg: #1a2744;
+  --sidebar-active: #2a3a5c;
+  --accent-blue: #2563eb;
+  --accent-blue-light: #eff6ff;
+  --icon-blue-bg: #dbeafe;
+  --icon-green: #10b981;
+  --icon-green-bg: #d1fae5;
+  --icon-orange: #f59e0b;
+  --icon-orange-bg: #fef3c7;
+  --icon-purple: #8b5cf6;
+  --icon-purple-bg: #ede9fe;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border: #e5e7eb;
+  --row-hover: #f9fafb;
+  --sidebar-w: 200px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  display: flex;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--sidebar-bg);
+  color: #fff;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 60;
+  transition: transform 0.25s ease;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.brand-shield {
+  width: 36px; height: 36px; flex-shrink: 0;
+}
+.brand-text h1 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.15;
+  letter-spacing: 0.2px;
+}
+.brand-text p {
+  font-size: 9px;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.6px;
+  margin-top: 2px;
+}
+.menu { padding: 16px 0; flex: 1; }
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  user-select: none;
+  transition: background 0.15s, color 0.15s;
+  min-height: 44px;
+}
+.menu-item:hover { color: #fff; background: rgba(255,255,255,0.04); }
+.menu-item.active {
+  color: #fff;
+  background: var(--sidebar-active);
+  border-left-color: #fff;
+}
+.menu-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.menu-item[data-tooltip] { position: relative; }
+.menu-item[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  white-space: pre-line;
+  width: 220px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 70;
+}
+.menu-item[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  border: 6px solid transparent;
+  border-right-color: #1f2937;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 71;
+}
+.menu-item[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+.menu-item[data-tooltip]:hover::before {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+@media (max-width: 767px) {
+  .menu-item[data-tooltip]::after,
+  .menu-item[data-tooltip]::before { display: none; }
+}
+.sidebar-footer {
+  padding: 16px 18px 18px;
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.55;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.sidebar-footer .info-block { margin-bottom: 10px; }
+.sidebar-footer .info-label {
+  font-weight: 700;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 2px;
+}
+.sidebar-footer .copyright {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  color: #475569;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 55;
+  display: none;
+}
+.sidebar-overlay.show { display: block; }
+
+/* ── MAIN ── */
+.main {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* mobile top bar (hidden on desktop) */
+.mobile-bar {
+  display: none;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 25;
+}
+.mobile-bar .ham {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  color: var(--text-primary);
+}
+.mobile-bar h2 { font-size: 14px; font-weight: 700; }
+
+/* sticky header bar */
+.header-bar {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.year-tabs { display: flex; gap: 8px; flex-shrink: 0; }
+.year-tab {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 36px;
+  transition: all 0.15s;
+}
+.year-tab:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.year-tab.active {
+  background: var(--accent-blue);
+  color: #fff;
+  border-color: var(--accent-blue);
+  font-weight: 700;
+}
+.filter-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.filter-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.filter-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pill {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 32px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.pill:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.pill.active {
+  background: var(--accent-blue);
+  color: #fff;
+  border-color: var(--accent-blue);
+}
+
+.page {
+  padding: 24px;
+  flex: 1;
+}
+
+/* ── KPI ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  min-height: 110px;
+}
+.kpi-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-icon svg { width: 26px; height: 26px; }
+.kpi-body { flex: 1; min-width: 0; }
+.kpi-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.kpi-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.kpi-pct {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 4px;
+  line-height: 1.1;
+}
+.kpi-arrow {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 400;
+  user-select: none;
+}
+
+/* ── SECTIONS ── */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  padding: 24px;
+  min-width: 0;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.card-unit {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.chart-wrap {
+  height: 320px;
+  position: relative;
+}
+
+/* ── DONUT ── */
+.donut-row {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.donut-canvas-wrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  flex-shrink: 0;
+}
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+}
+.donut-center-top {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.donut-center-year {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+.donut-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.donut-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.donut-lbl { flex: 1; color: var(--text-secondary); }
+.donut-val {
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* ── TABLE ── */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+thead th {
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 12px 16px;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+thead th:hover { color: var(--accent-blue); }
+thead th.sorted-asc::after { content: ' ↑'; color: var(--accent-blue); }
+thead th.sorted-desc::after { content: ' ↓'; color: var(--accent-blue); }
+thead th.num { text-align: right; }
+tbody tr { transition: background 0.12s; }
+tbody tr:hover { background: var(--row-hover); }
+tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+.td-num { text-align: right; font-weight: 500; }
+.td-rate { text-align: right; font-weight: 700; color: var(--accent-blue); }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 4px;
+}
+.page-btn {
+  background: #fff;
+  border: 1px solid var(--border);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.page-btn:hover:not(:disabled) { color: var(--accent-blue); border-color: var(--accent-blue); }
+.page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.page-info {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  min-width: 50px;
+  text-align: center;
+}
+.table-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.section-anim {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.kpi-card.section-anim:nth-child(1) { animation-delay: 0ms; }
+.kpi-card.section-anim:nth-child(2) { animation-delay: 60ms; }
+.kpi-card.section-anim:nth-child(3) { animation-delay: 120ms; }
+.kpi-card.section-anim:nth-child(4) { animation-delay: 180ms; }
+.row .card.section-anim:nth-child(1) { animation-delay: 240ms; }
+.row .card.section-anim:nth-child(2) { animation-delay: 300ms; }
+
+@keyframes fadeIn {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
+}
+.fade-cycle { animation: fadeIn 0.4s ease both; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1023px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .row { grid-template-columns: 1fr; }
+  .donut-canvas-wrap { width: 180px; height: 180px; }
+}
+
+@media (max-width: 767px) {
+  body { display: block; }
+  .sidebar {
+    transform: translateX(-100%);
+    width: 240px;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .mobile-bar { display: flex; }
+  .header-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 16px;
+  }
+  .year-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  .year-tabs::-webkit-scrollbar { display: none; }
+  .filter-area { margin-left: 0; flex-direction: column; align-items: stretch; gap: 8px; }
+  .filter-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .page { padding: 16px; }
+  .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+  .kpi-card { min-height: 90px; padding: 18px; }
+  .kpi-value { font-size: 28px; }
+  .chart-wrap { height: 240px; }
+  .donut-row { flex-direction: column; align-items: center; }
+  .donut-canvas-wrap { width: 200px; height: 200px; }
+  .donut-legend { width: 100%; }
+  table { table-layout: fixed; }
+  .col-grad { display: none; }
+  thead th, tbody td { padding: 12px 8px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <svg class="brand-shield" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 2 L31 6.5 V17 C31 25 25.5 31 18 33.5 C10.5 31 5 25 5 17 V6.5 Z"
+            fill="#c9a84c" stroke="#fff" stroke-width="0.8"/>
+      <text x="18" y="22" text-anchor="middle"
+            font-family="Georgia, serif" font-size="11" font-weight="700" fill="#1a2744">KMU</text>
+    </svg>
+    <div class="brand-text">
+      <h1>계명대학교</h1>
+      <p>KEIMYUNG UNIVERSITY</p>
+    </div>
+  </div>
+
+  <nav class="menu">
+    <div class="menu-item active" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="9"/>
+        <rect x="14" y="3" width="7" height="5"/>
+        <rect x="14" y="12" width="7" height="9"/>
+        <rect x="3" y="16" width="7" height="5"/>
+      </svg>
+      <span>대시보드</span>
+    </div>
+    <div class="menu-item" data-page="info" data-tooltip="출처: 한국교육개발원 고등교육기관 졸업자 취업통계&#10;기준일: 매년 12월 31일&#10;대상: 계명대학교 대학과정 졸업자&#10;집계: 학교별 학과별 시트, 학교명='계명대학교' 필터">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="16" x2="12" y2="12"/>
+        <circle cx="12" cy="8" r="0.6" fill="currentColor"/>
+      </svg>
+      <span>데이터 안내</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="info-block">
+      <span class="info-label">데이터 출처</span>
+      한국교육개발원<br>고등교육기관 졸업자<br>취업통계
+    </div>
+    <div class="info-block">
+      <span class="info-label">조사 기준일</span>
+      매년 12월 31일
+    </div>
+    <div class="info-block">
+      <span class="info-label">대상</span>
+      대학과정 졸업자
+    </div>
+    <div class="copyright">© KEIMYUNG UNIVERSITY</div>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="main">
+  <div class="mobile-bar">
+    <button class="ham" id="hamburger" aria-label="메뉴 열기">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <h2>계명대학교 취업통계</h2>
+  </div>
+
+  <div class="header-bar">
+    <div class="year-tabs" id="yearTabs"></div>
+    <div class="filter-area">
+      <span class="filter-label">계열 필터</span>
+      <div class="filter-pills" id="filterPills"></div>
+    </div>
+  </div>
+
+  <div class="page">
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card section-anim">
+        <div class="kpi-icon" style="background:var(--icon-blue-bg);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10 12 5 2 10l10 5z"/>
+            <path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">총 학과 수</div>
+          <div class="kpi-value" id="kpiTotal" style="color:var(--accent-blue);">—</div>
+        </div>
+        <span class="kpi-arrow">›</span>
+      </div>
+
+      <div class="kpi-card section-anim">
+        <div class="kpi-icon" style="background:var(--icon-green-bg);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+            <polyline points="16 7 22 7 22 13"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">평균 취업률</div>
+          <div class="kpi-value" id="kpiAvg" style="color:var(--icon-green);">—</div>
+        </div>
+        <span class="kpi-arrow">›</span>
+      </div>
+
+      <div class="kpi-card section-anim">
+        <div class="kpi-icon" style="background:var(--icon-orange-bg);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15 8.5 22 9.5 17 14.5 18.2 21.5 12 18 5.8 21.5 7 14.5 2 9.5 9 8.5"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">최고 취업률 학과</div>
+          <div class="kpi-name" id="kpiBestName">—</div>
+          <div class="kpi-pct" id="kpiBestRate" style="color:var(--icon-orange);">—</div>
+        </div>
+        <span class="kpi-arrow">›</span>
+      </div>
+
+      <div class="kpi-card section-anim">
+        <div class="kpi-icon" style="background:var(--icon-purple-bg);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M16 16s-1.5-2-4-2-4 2-4 2"/>
+            <line x1="9" y1="9" x2="9.01" y2="9"/>
+            <line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">최저 취업률 학과</div>
+          <div class="kpi-name" id="kpiWorstName">—</div>
+          <div class="kpi-pct" id="kpiWorstRate" style="color:var(--icon-purple);">—</div>
+        </div>
+        <span class="kpi-arrow">›</span>
+      </div>
+    </div>
+
+    <!-- Middle row: bar + donut -->
+    <div class="row">
+      <div class="card section-anim">
+        <div class="card-header">
+          <span class="card-title">대계열별 평균 취업률 비교</span>
+          <span class="card-unit">(단위: %)</span>
+        </div>
+        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+      </div>
+      <div class="card section-anim">
+        <div class="card-header">
+          <span class="card-title">취업 유형 분포</span>
+        </div>
+        <div class="donut-row">
+          <div class="donut-canvas-wrap">
+            <canvas id="donutChart"></canvas>
+            <div class="donut-center">
+              <div class="donut-center-top">취업자 기준</div>
+              <div class="donut-center-year" id="donutYear">—</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="donutLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom row: table + retention -->
+    <div class="row">
+      <div class="card section-anim">
+        <div class="card-header">
+          <span class="card-title">학과별 취업 현황</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-col="학과명" id="th-학과명">학과명</th>
+                <th class="num col-grad" data-col="졸업자_계" id="th-졸업자_계">졸업자 수</th>
+                <th class="num" data-col="취업자_합계_계" id="th-취업자_합계_계">취업자 수</th>
+                <th class="num" data-col="취업률_계" id="th-취업률_계">취업률(%)</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button class="page-btn" id="prevPage" aria-label="이전 페이지">‹</button>
+          <span class="page-info" id="pageInfo">1/1</span>
+          <button class="page-btn" id="nextPage" aria-label="다음 페이지">›</button>
+        </div>
+        <div class="table-note">※ 컬럼 헤더를 클릭하면 오름차순/내림차순 정렬이 가능합니다.</div>
+      </div>
+      <div class="card section-anim">
+        <div class="card-header">
+          <span class="card-title">유지취업률 추이</span>
+        </div>
+        <div class="chart-wrap"><canvas id="retentionChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = {"2022": [{"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "국어ㆍ국문학", "학과명": "국어국문학전공", "졸업자_계": 30, "취업률_계": 45.8, "취업자_합계_계": 11, "취업자_교외취업자_계": 6, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 6.7, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "국어ㆍ국문학", "학과명": "문예창작학과", "졸업자_계": 38, "취업률_계": 40.5, "취업자_합계_계": 15, "취업자_교외취업자_계": 13, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 84.6, "2차 유지취업률_계": 69.2, "3차 유지취업률_계": 46.2, "4차 유지취업률_계": 46.2}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "국어ㆍ국문학", "학과명": "글로벌한국어문화교육전공", "졸업자_계": 45, "취업률_계": 44.4, "취업자_합계_계": 8, "취업자_교외취업자_계": 6, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 11.1, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 83.3, "4차 유지취업률_계": 66.7}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "일본어ㆍ문학", "학과명": "일본어문학전공", "졸업자_계": 52, "취업률_계": 56.3, "취업자_합계_계": 27, "취업자_교외취업자_계": 22, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 7.7, "1차 유지취업률_계": 95.5, "2차 유지취업률_계": 81.8, "3차 유지취업률_계": 68.2, "4차 유지취업률_계": 68.2}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "중국어ㆍ문학", "학과명": "중국어문학전공", "졸업자_계": 52, "취업률_계": 55.1, "취업자_합계_계": 27, "취업자_교외취업자_계": 26, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 1.9, "1차 유지취업률_계": 92.3, "2차 유지취업률_계": 84.6, "3차 유지취업률_계": 61.5, "4차 유지취업률_계": 57.7}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "영미어ㆍ문학", "학과명": "영어영문학전공", "졸업자_계": 82, "취업률_계": 52.8, "취업자_합계_계": 38, "취업자_교외취업자_계": 27, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 5, "취업자_프리랜서_계": 6, "진학률_계": 4.9, "1차 유지취업률_계": 88.9, "2차 유지취업률_계": 85.2, "3차 유지취업률_계": 77.8, "4차 유지취업률_계": 77.8}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "독일어ㆍ문학", "학과명": "독일어문학전공", "졸업자_계": 27, "취업률_계": 40.7, "취업자_합계_계": 11, "취업자_교외취업자_계": 7, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 62.5, "4차 유지취업률_계": 62.5}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "러시아어ㆍ문학", "학과명": "러시아어문학전공", "졸업자_계": 31, "취업률_계": 41.4, "취업자_합계_계": 12, "취업자_교외취업자_계": 11, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 3.2, "1차 유지취업률_계": 63.6, "2차 유지취업률_계": 54.5, "3차 유지취업률_계": 54.5, "4차 유지취업률_계": 54.5}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "스페인어ㆍ문학", "학과명": "스페인어중남미학전공", "졸업자_계": 43, "취업률_계": 50.0, "취업자_합계_계": 21, "취업자_교외취업자_계": 18, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 2.3, "1차 유지취업률_계": 77.8, "2차 유지취업률_계": 77.8, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 61.1}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "문헌정보학", "학과명": "문헌정보학과", "졸업자_계": 49, "취업률_계": 41.7, "취업자_합계_계": 20, "취업자_교외취업자_계": 19, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 2.0, "1차 유지취업률_계": 90.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 70.0, "4차 유지취업률_계": 70.0}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "심리학", "학과명": "심리학과", "졸업자_계": 61, "취업률_계": 50.0, "취업자_합계_계": 23, "취업자_교외취업자_계": 20, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 23.0, "1차 유지취업률_계": 90.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 75.0}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "역사ㆍ고고학", "학과명": "사학과", "졸업자_계": 46, "취업률_계": 40.0, "취업자_합계_계": 16, "취업자_교외취업자_계": 13, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 13.0, "1차 유지취업률_계": 78.6, "2차 유지취업률_계": 71.4, "3차 유지취업률_계": 57.1, "4차 유지취업률_계": 57.1}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "종교학", "학과명": "기독교학과", "졸업자_계": 7, "취업률_계": 0.0, "취업자_합계_계": 0, "취업자_교외취업자_계": 0, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 0.0, "2차 유지취업률_계": 0.0, "3차 유지취업률_계": 0.0, "4차 유지취업률_계": 0.0}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "국제지역학", "학과명": "미국학전공", "졸업자_계": 37, "취업률_계": 42.9, "취업자_합계_계": 15, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 2.7, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 92.9, "3차 유지취업률_계": 85.7, "4차 유지취업률_계": 78.6}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "국제지역학", "학과명": "유럽학전공", "졸업자_계": 21, "취업률_계": 66.7, "취업자_합계_계": 14, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 66.7}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "국제지역학", "학과명": "일본학전공", "졸업자_계": 87, "취업률_계": 63.1, "취업자_합계_계": 53, "취업자_교외취업자_계": 45, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 6, "진학률_계": 2.3, "1차 유지취업률_계": 88.9, "2차 유지취업률_계": 77.8, "3차 유지취업률_계": 75.6, "4차 유지취업률_계": 73.3}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "국제지역학", "학과명": "중국학전공", "졸업자_계": 96, "취업률_계": 51.1, "취업자_합계_계": 45, "취업자_교외취업자_계": 37, "취업자_교내취업자_계": 3, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 5.2, "1차 유지취업률_계": 85.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 72.5, "4차 유지취업률_계": 67.5}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "철학ㆍ윤리학", "학과명": "철학과", "졸업자_계": 26, "취업률_계": 45.8, "취업자_합계_계": 11, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 7.7, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 62.5, "3차 유지취업률_계": 62.5, "4차 유지취업률_계": 37.5}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "경영정보학전공", "졸업자_계": 79, "취업률_계": 57.7, "취업자_합계_계": 41, "취업자_교외취업자_계": 37, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 8.9, "1차 유지취업률_계": 81.6, "2차 유지취업률_계": 78.9, "3차 유지취업률_계": 76.3, "4차 유지취업률_계": 73.7}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "경영학전공", "졸업자_계": 217, "취업률_계": 61.0, "취업자_합계_계": 111, "취업자_교외취업자_계": 106, "취업자_교내취업자_계": 3, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 1.4, "1차 유지취업률_계": 89.0, "2차 유지취업률_계": 85.3, "3차 유지취업률_계": 78.9, "4차 유지취업률_계": 78.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "관광경영학전공", "졸업자_계": 165, "취업률_계": 59.2, "취업자_합계_계": 87, "취업자_교외취업자_계": 74, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 4, "취업자_프리랜서_계": 7, "진학률_계": 1.2, "1차 유지취업률_계": 93.4, "2차 유지취업률_계": 90.8, "3차 유지취업률_계": 82.9, "4차 유지취업률_계": 77.6}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "스포츠마케팅학과", "졸업자_계": 31, "취업률_계": 74.1, "취업자_합계_계": 20, "취업자_교외취업자_계": 18, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 6.5, "1차 유지취업률_계": 88.9, "2차 유지취업률_계": 88.9, "3차 유지취업률_계": 83.3, "4차 유지취업률_계": 77.8}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "Department of International Business", "졸업자_계": 16, "취업률_계": 76.9, "취업자_합계_계": 10, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 87.5, "3차 유지취업률_계": 87.5, "4차 유지취업률_계": 87.5}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경제학", "학과명": "경제금융학전공", "졸업자_계": 97, "취업률_계": 52.4, "취업자_합계_계": 43, "취업자_교외취업자_계": 38, "취업자_교내취업자_계": 3, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 2.1, "1차 유지취업률_계": 92.7, "2차 유지취업률_계": 90.2, "3차 유지취업률_계": 82.9, "4차 유지취업률_계": 78.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "광고·홍보학", "학과명": "광고홍보학전공", "졸업자_계": 67, "취업률_계": 69.8, "취업자_합계_계": 44, "취업자_교외취업자_계": 43, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 1.5, "1차 유지취업률_계": 90.7, "2차 유지취업률_계": 81.4, "3차 유지취업률_계": 81.4, "4차 유지취업률_계": 79.1}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "금융ㆍ회계ㆍ세무학", "학과명": "세무학전공", "졸업자_계": 52, "취업률_계": 48.1, "취업자_합계_계": 25, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 91.7, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 83.3, "4차 유지취업률_계": 79.2}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "금융ㆍ회계ㆍ세무학", "학과명": "회계학전공", "졸업자_계": 132, "취업률_계": 66.4, "취업자_합계_계": 83, "취업자_교외취업자_계": 74, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 5, "진학률_계": 0.8, "1차 유지취업률_계": 92.0, "2차 유지취업률_계": 89.3, "3차 유지취업률_계": 84.0, "4차 유지취업률_계": 81.3}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "무역ㆍ유통학", "학과명": "국제통상학전공", "졸업자_계": 164, "취업률_계": 58.4, "취업자_합계_계": 80, "취업자_교외취업자_계": 73, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 1.2, "1차 유지취업률_계": 96.0, "2차 유지취업률_계": 89.3, "3차 유지취업률_계": 78.7, "4차 유지취업률_계": 76.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "무역ㆍ유통학", "학과명": "전자무역학전공", "졸업자_계": 44, "취업률_계": 57.1, "취업자_합계_계": 20, "취업자_교외취업자_계": 17, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 94.7, "2차 유지취업률_계": 94.7, "3차 유지취업률_계": 89.5, "4차 유지취업률_계": 78.9}, {"대계열": "사회계열", "중계열": "법률", "소계열": "법학", "학과명": "경찰법학과", "졸업자_계": 1, "취업률_계": 100.0, "취업자_합계_계": 1, "취업자_교외취업자_계": 0, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 0.0, "2차 유지취업률_계": 0.0, "3차 유지취업률_계": 0.0, "4차 유지취업률_계": 0.0}, {"대계열": "사회계열", "중계열": "법률", "소계열": "법학", "학과명": "법학과", "졸업자_계": 102, "취업률_계": 40.0, "취업자_합계_계": 38, "취업자_교외취업자_계": 35, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 1, "진학률_계": 3.9, "1차 유지취업률_계": 88.6, "2차 유지취업률_계": 85.7, "3차 유지취업률_계": 85.7, "4차 유지취업률_계": 85.7}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "가족ㆍ사회ㆍ복지학", "학과명": "사회복지학과", "졸업자_계": 73, "취업률_계": 60.6, "취업자_합계_계": 43, "취업자_교외취업자_계": 42, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 78.6, "3차 유지취업률_계": 71.4, "4차 유지취업률_계": 69.0}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "국제학", "학과명": "Department of International Relations", "졸업자_계": 19, "취업률_계": 52.6, "취업자_합계_계": 10, "취업자_교외취업자_계": 9, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 88.9, "2차 유지취업률_계": 77.8, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 66.7}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "도시ㆍ지역학", "학과명": "도시계획학전공", "졸업자_계": 30, "취업률_계": 53.8, "취업자_합계_계": 14, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 10.0, "1차 유지취업률_계": 92.9, "2차 유지취업률_계": 92.9, "3차 유지취업률_계": 85.7, "4차 유지취업률_계": 85.7}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "사회학", "학과명": "사회학과", "졸업자_계": 27, "취업률_계": 48.0, "취업자_합계_계": 12, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 7.4, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 50.0}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "언론ㆍ방송ㆍ매체학", "학과명": "언론영상학전공", "졸업자_계": 106, "취업률_계": 62.2, "취업자_합계_계": 61, "취업자_교외취업자_계": 48, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 9, "진학률_계": 0.9, "1차 유지취업률_계": 85.7, "2차 유지취업률_계": 79.6, "3차 유지취업률_계": 63.3, "4차 유지취업률_계": 63.3}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "정치외교학", "학과명": "정치외교학전공", "졸업자_계": 43, "취업률_계": 48.8, "취업자_합계_계": 20, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 3, "진학률_계": 2.3, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 93.8, "3차 유지취업률_계": 87.5, "4차 유지취업률_계": 87.5}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "행정학", "학과명": "경찰행정학과", "졸업자_계": 138, "취업률_계": 56.6, "취업자_합계_계": 77, "취업자_교외취업자_계": 73, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 1.4, "1차 유지취업률_계": 95.9, "2차 유지취업률_계": 94.6, "3차 유지취업률_계": 93.2, "4차 유지취업률_계": 93.2}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "행정학", "학과명": "행정학전공", "졸업자_계": 102, "취업률_계": 50.5, "취업자_합계_계": 50, "취업자_교외취업자_계": 43, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 1.0, "1차 유지취업률_계": 93.3, "2차 유지취업률_계": 91.1, "3차 유지취업률_계": 86.7, "4차 유지취업률_계": 86.7}, {"대계열": "교육계열", "중계열": "교육일반", "소계열": "교육학", "학과명": "교육학과", "졸업자_계": 18, "취업률_계": 30.8, "취업자_합계_계": 4, "취업자_교외취업자_계": 3, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 16.7, "1차 유지취업률_계": 66.7, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 66.7}, {"대계열": "교육계열", "중계열": "유아교육", "소계열": "유아교육학", "학과명": "유아교육과", "졸업자_계": 22, "취업률_계": 77.3, "취업자_합계_계": 17, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 81.3, "3차 유지취업률_계": 81.3, "4차 유지취업률_계": 81.3}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "국어교육과", "졸업자_계": 20, "취업률_계": 31.6, "취업자_합계_계": 6, "취업자_교외취업자_계": 4, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "영어교육과", "졸업자_계": 26, "취업률_계": 53.8, "취업자_합계_계": 14, "취업자_교외취업자_계": 11, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 91.7, "2차 유지취업률_계": 91.7, "3차 유지취업률_계": 83.3, "4차 유지취업률_계": 83.3}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "한문교육과", "졸업자_계": 12, "취업률_계": 50.0, "취업자_합계_계": 4, "취업자_교외취업자_계": 4, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 33.3, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 50.0, "4차 유지취업률_계": 50.0}, {"대계열": "공학계열", "중계열": "건축", "소계열": "건축ㆍ설비공학", "학과명": "건축공학전공", "졸업자_계": 48, "취업률_계": 73.9, "취업자_합계_계": 34, "취업자_교외취업자_계": 33, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 4.2, "1차 유지취업률_계": 93.9, "2차 유지취업률_계": 90.9, "3차 유지취업률_계": 90.9, "4차 유지취업률_계": 84.8}, {"대계열": "공학계열", "중계열": "건축", "소계열": "건축학", "학과명": "건축학전공", "졸업자_계": 36, "취업률_계": 69.7, "취업자_합계_계": 23, "취업자_교외취업자_계": 23, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 5.6, "1차 유지취업률_계": 95.7, "2차 유지취업률_계": 87.0, "3차 유지취업률_계": 87.0, "4차 유지취업률_계": 82.6}, {"대계열": "공학계열", "중계열": "토목ㆍ도시", "소계열": "토목공학", "학과명": "토목공학전공", "졸업자_계": 43, "취업률_계": 63.4, "취업자_합계_계": 26, "취업자_교외취업자_계": 22, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 2.3, "1차 유지취업률_계": 95.7, "2차 유지취업률_계": 91.3, "3차 유지취업률_계": 82.6, "4차 유지취업률_계": 82.6}, {"대계열": "공학계열", "중계열": "교통ㆍ운송", "소계열": "지상교통공학", "학과명": "교통공학전공", "졸업자_계": 36, "취업률_계": 81.3, "취업자_합계_계": 26, "취업자_교외취업자_계": 26, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 8.3, "1차 유지취업률_계": 88.5, "2차 유지취업률_계": 88.5, "3차 유지취업률_계": 84.6, "4차 유지취업률_계": 84.6}, {"대계열": "공학계열", "중계열": "기계ㆍ금속", "소계열": "기계공학", "학과명": "기계공학전공", "졸업자_계": 177, "취업률_계": 58.2, "취업자_합계_계": 92, "취업자_교외취업자_계": 88, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 6.8, "1차 유지취업률_계": 94.3, "2차 유지취업률_계": 92.0, "3차 유지취업률_계": 87.5, "4차 유지취업률_계": 87.5}, {"대계열": "공학계열", "중계열": "전기ㆍ전자", "소계열": "전자공학", "학과명": "전자공학전공", "졸업자_계": 68, "취업률_계": 56.5, "취업자_합계_계": 35, "취업자_교외취업자_계": 33, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 1.5, "1차 유지취업률_계": 94.1, "2차 유지취업률_계": 94.1, "3차 유지취업률_계": 88.2, "4차 유지취업률_계": 88.2}, {"대계열": "공학계열", "중계열": "정밀ㆍ에너지", "소계열": "에너지공학", "학과명": "전기에너지공학전공", "졸업자_계": 36, "취업률_계": 57.1, "취업자_합계_계": 16, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 19.4, "1차 유지취업률_계": 86.7, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 73.3, "4차 유지취업률_계": 73.3}, {"대계열": "공학계열", "중계열": "소재ㆍ재료", "소계열": "신소재공학", "학과명": "신소재공학전공", "졸업자_계": 49, "취업률_계": 66.0, "취업자_합계_계": 31, "취업자_교외취업자_계": 30, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 2.0, "1차 유지취업률_계": 90.3, "2차 유지취업률_계": 87.1, "3차 유지취업률_계": 80.6, "4차 유지취업률_계": 77.4}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "전산학ㆍ컴퓨터공학", "학과명": "컴퓨터공학전공", "졸업자_계": 101, "취업률_계": 45.8, "취업자_합계_계": 44, "취업자_교외취업자_계": 44, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 2.0, "1차 유지취업률_계": 90.9, "2차 유지취업률_계": 86.4, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 75.0}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "응용소프트웨어공학", "학과명": "게임모바일공학전공", "졸업자_계": 49, "취업률_계": 68.8, "취업자_합계_계": 33, "취업자_교외취업자_계": 32, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 93.8, "2차 유지취업률_계": 81.3, "3차 유지취업률_계": 59.4, "4차 유지취업률_계": 59.4}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "응용소프트웨어공학", "학과명": "디지펜게임공학전공", "졸업자_계": 5, "취업률_계": 40.0, "취업자_합계_계": 2, "취업자_교외취업자_계": 2, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "공학계열", "중계열": "산업", "소계열": "산업공학", "학과명": "산업공학과", "졸업자_계": 28, "취업률_계": 82.1, "취업자_합계_계": 23, "취업자_교외취업자_계": 20, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 95.0, "3차 유지취업률_계": 95.0, "4차 유지취업률_계": 95.0}, {"대계열": "공학계열", "중계열": "화공", "소계열": "화학공학", "학과명": "화학공학전공", "졸업자_계": 111, "취업률_계": 54.4, "취업자_합계_계": 56, "취업자_교외취업자_계": 51, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 5.4, "1차 유지취업률_계": 94.3, "2차 유지취업률_계": 86.8, "3차 유지취업률_계": 79.2, "4차 유지취업률_계": 77.4}, {"대계열": "공학계열", "중계열": "기타", "소계열": "기전공학", "학과명": "로봇공학전공", "졸업자_계": 6, "취업률_계": 50.0, "취업자_합계_계": 3, "취업자_교외취업자_계": 2, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "생명과학", "학과명": "생명과학전공", "졸업자_계": 57, "취업률_계": 59.6, "취업자_합계_계": 28, "취업자_교외취업자_계": 25, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 17.5, "1차 유지취업률_계": 88.0, "2차 유지취업률_계": 88.0, "3차 유지취업률_계": 76.0, "4차 유지취업률_계": 76.0}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "화학", "학과명": "화학전공", "졸업자_계": 42, "취업률_계": 64.7, "취업자_합계_계": 22, "취업자_교외취업자_계": 18, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 3, "진학률_계": 14.3, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 83.3, "4차 유지취업률_계": 83.3}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "지구환경학전공", "졸업자_계": 47, "취업률_계": 66.7, "취업자_합계_계": 28, "취업자_교외취업자_계": 25, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 10.6, "1차 유지취업률_계": 92.0, "2차 유지취업률_계": 92.0, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 76.0}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "환경과학전공", "졸업자_계": 40, "취업률_계": 67.6, "취업자_합계_계": 25, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 2.5, "1차 유지취업률_계": 91.7, "2차 유지취업률_계": 91.7, "3차 유지취업률_계": 87.5, "4차 유지취업률_계": 87.5}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "생태조경학전공", "졸업자_계": 36, "취업률_계": 60.7, "취업자_합계_계": 17, "취업자_교외취업자_계": 17, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 2.8, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 82.4, "3차 유지취업률_계": 76.5, "4차 유지취업률_계": 70.6}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "가정관리학", "학과명": "소비자정보학과", "졸업자_계": 37, "취업률_계": 59.5, "취업자_합계_계": 22, "취업자_교외취업자_계": 19, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 94.7, "2차 유지취업률_계": 89.5, "3차 유지취업률_계": 78.9, "4차 유지취업률_계": 78.9}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "식품영양학", "학과명": "식품가공학전공", "졸업자_계": 47, "취업률_계": 62.5, "취업자_합계_계": 25, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 14.9, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 66.7}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "식품영양학", "학과명": "식품영양학전공", "졸업자_계": 54, "취업률_계": 57.4, "취업자_합계_계": 27, "취업자_교외취업자_계": 26, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 3.7, "1차 유지취업률_계": 88.5, "2차 유지취업률_계": 80.8, "3차 유지취업률_계": 76.9, "4차 유지취업률_계": 76.9}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "의류ㆍ의상학", "학과명": "패션마케팅학과", "졸업자_계": 45, "취업률_계": 65.1, "취업자_합계_계": 28, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 70.8}, {"대계열": "자연계열", "중계열": "수학ㆍ물리ㆍ천문ㆍ지리", "소계열": "수학", "학과명": "수학전공", "졸업자_계": 32, "취업률_계": 51.7, "취업자_합계_계": 15, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 7, "진학률_계": 6.3, "1차 유지취업률_계": 62.5, "2차 유지취업률_계": 50.0, "3차 유지취업률_계": 50.0, "4차 유지취업률_계": 50.0}, {"대계열": "자연계열", "중계열": "수학ㆍ물리ㆍ천문ㆍ지리", "소계열": "통계학", "학과명": "통계학전공", "졸업자_계": 40, "취업률_계": 62.2, "취업자_합계_계": 23, "취업자_교외취업자_계": 21, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 7.5, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "의약계열", "중계열": "의료", "소계열": "의학", "학과명": "의학과", "졸업자_계": 70, "취업률_계": 97.1, "취업자_합계_계": 66, "취업자_교외취업자_계": 66, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 86.4, "2차 유지취업률_계": 84.8, "3차 유지취업률_계": 84.8, "4차 유지취업률_계": 84.8}, {"대계열": "의약계열", "중계열": "간호", "소계열": "간호학", "학과명": "간호학과", "졸업자_계": 189, "취업률_계": 82.3, "취업자_합계_계": 153, "취업자_교외취업자_계": 152, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 96.1, "2차 유지취업률_계": 92.1, "3차 유지취업률_계": 88.8, "4차 유지취업률_계": 87.5}, {"대계열": "의약계열", "중계열": "약학", "소계열": "약학", "학과명": "약학과", "졸업자_계": 18, "취업률_계": 88.2, "취업자_합계_계": 15, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 92.9, "2차 유지취업률_계": 85.7, "3차 유지취업률_계": 64.3, "4차 유지취업률_계": 64.3}, {"대계열": "의약계열", "중계열": "약학", "소계열": "약학", "학과명": "제약학과", "졸업자_계": 15, "취업률_계": 92.9, "취업자_합계_계": 13, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 91.7, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 66.7}, {"대계열": "의약계열", "중계열": "치료ㆍ보건", "소계열": "보건학", "학과명": "공중보건학전공", "졸업자_계": 51, "취업률_계": 66.7, "취업자_합계_계": 32, "취업자_교외취업자_계": 31, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 3.9, "1차 유지취업률_계": 87.1, "2차 유지취업률_계": 83.9, "3차 유지취업률_계": 71.0, "4차 유지취업률_계": 71.0}, {"대계열": "의약계열", "중계열": "치료ㆍ보건", "소계열": "의료공학", "학과명": "의용공학과", "졸업자_계": 40, "취업률_계": 65.8, "취업자_합계_계": 25, "취업자_교외취업자_계": 25, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 5.0, "1차 유지취업률_계": 92.0, "2차 유지취업률_계": 92.0, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 76.0}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "산업디자인", "학과명": "산업디자인과", "졸업자_계": 67, "취업률_계": 64.6, "취업자_합계_계": 42, "취업자_교외취업자_계": 31, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 3, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 7, "진학률_계": 1.5, "1차 유지취업률_계": 90.3, "2차 유지취업률_계": 80.6, "3차 유지취업률_계": 74.2, "4차 유지취업률_계": 74.2}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "시각디자인", "학과명": "시각디자인과", "졸업자_계": 69, "취업률_계": 58.7, "취업자_합계_계": 37, "취업자_교외취업자_계": 34, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 79.4, "2차 유지취업률_계": 70.6, "3차 유지취업률_계": 67.6, "4차 유지취업률_계": 64.7}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "패션디자인", "학과명": "패션디자인과", "졸업자_계": 47, "취업률_계": 68.9, "취업자_합계_계": 31, "취업자_교외취업자_계": 29, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 2.1, "1차 유지취업률_계": 69.0, "2차 유지취업률_계": 58.6, "3차 유지취업률_계": 58.6, "4차 유지취업률_계": 55.2}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "패션디자인", "학과명": "텍스타일디자인과", "졸업자_계": 44, "취업률_계": 67.4, "취업자_합계_계": 29, "취업자_교외취업자_계": 29, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 79.3, "2차 유지취업률_계": 72.4, "3차 유지취업률_계": 62.1, "4차 유지취업률_계": 62.1}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "기타디자인", "학과명": "공예디자인과", "졸업자_계": 30, "취업률_계": 57.1, "취업자_합계_계": 16, "취업자_교외취업자_계": 10, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 3.3, "1차 유지취업률_계": 80.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 60.0, "4차 유지취업률_계": 50.0}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "기타디자인", "학과명": "영상애니메이션과", "졸업자_계": 52, "취업률_계": 66.0, "취업자_합계_계": 33, "취업자_교외취업자_계": 22, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 10, "진학률_계": 0.0, "1차 유지취업률_계": 86.4, "2차 유지취업률_계": 81.8, "3차 유지취업률_계": 81.8, "4차 유지취업률_계": 81.8}, {"대계열": "예체능계열", "중계열": "응용예술", "소계열": "사진ㆍ만화", "학과명": "사진미디어과", "졸업자_계": 25, "취업률_계": 59.1, "취업자_합계_계": 13, "취업자_교외취업자_계": 10, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 1, "진학률_계": 4.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 90.0, "3차 유지취업률_계": 90.0, "4차 유지취업률_계": 90.0}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "무용", "학과명": "무용전공", "졸업자_계": 35, "취업률_계": 83.9, "취업자_합계_계": 26, "취업자_교외취업자_계": 7, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 8, "진학률_계": 11.4, "1차 유지취업률_계": 71.4, "2차 유지취업률_계": 57.1, "3차 유지취업률_계": 57.1, "4차 유지취업률_계": 57.1}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "사회체육학전공", "졸업자_계": 55, "취업률_계": 58.7, "취업자_합계_계": 27, "취업자_교외취업자_계": 19, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 7, "진학률_계": 5.5, "1차 유지취업률_계": 84.2, "2차 유지취업률_계": 78.9, "3차 유지취업률_계": 73.7, "4차 유지취업률_계": 68.4}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "체육학전공", "졸업자_계": 62, "취업률_계": 67.9, "취업자_합계_계": 36, "취업자_교외취업자_계": 27, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 7, "진학률_계": 4.8, "1차 유지취업률_계": 77.8, "2차 유지취업률_계": 70.4, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 63.0}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "태권도학과", "졸업자_계": 53, "취업률_계": 59.2, "취업자_합계_계": 29, "취업자_교외취업자_계": 22, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 7, "진학률_계": 5.7, "1차 유지취업률_계": 77.3, "2차 유지취업률_계": 63.6, "3차 유지취업률_계": 45.5, "4차 유지취업률_계": 40.9}, {"대계열": "예체능계열", "중계열": "미술ㆍ조형", "소계열": "순수미술", "학과명": "동양화과", "졸업자_계": 1, "취업률_계": 0.0, "취업자_합계_계": 0, "취업자_교외취업자_계": 0, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 0.0, "2차 유지취업률_계": 0.0, "3차 유지취업률_계": 0.0, "4차 유지취업률_계": 0.0}, {"대계열": "예체능계열", "중계열": "미술ㆍ조형", "소계열": "순수미술", "학과명": "회화과", "졸업자_계": 37, "취업률_계": 63.3, "취업자_합계_계": 19, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 2, "진학률_계": 13.5, "1차 유지취업률_계": 78.6, "2차 유지취업률_계": 78.6, "3차 유지취업률_계": 64.3, "4차 유지취업률_계": 64.3}, {"대계열": "예체능계열", "중계열": "연극ㆍ영화", "소계열": "연극ㆍ영화", "학과명": "연극뮤지컬전공", "졸업자_계": 19, "취업률_계": 88.9, "취업자_합계_계": 16, "취업자_교외취업자_계": 9, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 55.6, "2차 유지취업률_계": 55.6, "3차 유지취업률_계": 44.4, "4차 유지취업률_계": 44.4}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기악", "학과명": "관현악전공", "졸업자_계": 64, "취업률_계": 52.8, "취업자_합계_계": 28, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 4, "취업자_프리랜서_계": 9, "진학률_계": 14.1, "1차 유지취업률_계": 73.3, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 40.0, "4차 유지취업률_계": 40.0}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기악", "학과명": "피아노전공", "졸업자_계": 53, "취업률_계": 35.7, "취업자_합계_계": 15, "취업자_교외취업자_계": 4, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 8, "진학률_계": 13.2, "1차 유지취업률_계": 50.0, "2차 유지취업률_계": 50.0, "3차 유지취업률_계": 25.0, "4차 유지취업률_계": 25.0}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "성악", "학과명": "성악전공", "졸업자_계": 51, "취업률_계": 67.7, "취업자_합계_계": 21, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 4, "진학률_계": 31.4, "1차 유지취업률_계": 86.7, "2차 유지취업률_계": 86.7, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 80.0}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "작곡", "학과명": "작곡전공", "졸업자_계": 28, "취업률_계": 45.5, "취업자_합계_계": 10, "취업자_교외취업자_계": 7, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 17.9, "1차 유지취업률_계": 57.1, "2차 유지취업률_계": 57.1, "3차 유지취업률_계": 57.1, "4차 유지취업률_계": 57.1}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기타음악", "학과명": "뮤직프로덕션과", "졸업자_계": 29, "취업률_계": 48.0, "취업자_합계_계": 12, "취업자_교외취업자_계": 7, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 4, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 57.1, "3차 유지취업률_계": 42.9, "4차 유지취업률_계": 42.9}], "2023": [{"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "국어ㆍ국문학", "학과명": "국어국문학전공", "졸업자_계": 38, "취업률_계": 38.9, "취업자_합계_계": 14, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 2.6, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 58.3, "4차 유지취업률_계": 58.3}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "국어ㆍ국문학", "학과명": "문예창작학과", "졸업자_계": 38, "취업률_계": 38.7, "취업자_합계_계": 12, "취업자_교외취업자_계": 9, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 13.2, "1차 유지취업률_계": 88.9, "2차 유지취업률_계": 77.8, "3차 유지취업률_계": 77.8, "4차 유지취업률_계": 55.6}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "일본어ㆍ문학", "학과명": "일본어일본학과", "졸업자_계": 103, "취업률_계": 45.0, "취업자_합계_계": 45, "취업자_교외취업자_계": 37, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 3, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 4, "진학률_계": 0.0, "1차 유지취업률_계": 92.1, "2차 유지취업률_계": 89.5, "3차 유지취업률_계": 78.9, "4차 유지취업률_계": 78.9}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "중국어ㆍ문학", "학과명": "중국어중국학과", "졸업자_계": 125, "취업률_계": 45.4, "취업자_합계_계": 54, "취업자_교외취업자_계": 46, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 5, "진학률_계": 3.2, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 70.8}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "영미어ㆍ문학", "학과명": "영어영문학과", "졸업자_계": 82, "취업률_계": 47.4, "취업자_합계_계": 36, "취업자_교외취업자_계": 27, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 7, "진학률_계": 6.1, "1차 유지취업률_계": 85.2, "2차 유지취업률_계": 81.5, "3차 유지취업률_계": 70.4, "4차 유지취업률_계": 70.4}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "러시아어ㆍ문학", "학과명": "러시아중앙아시아학과", "졸업자_계": 21, "취업률_계": 63.2, "취업자_합계_계": 12, "취업자_교외취업자_계": 11, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 4.8, "1차 유지취업률_계": 81.8, "2차 유지취업률_계": 63.6, "3차 유지취업률_계": 63.6, "4차 유지취업률_계": 63.6}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "스페인어ㆍ문학", "학과명": "스페인어중남미학과", "졸업자_계": 45, "취업률_계": 50.0, "취업자_합계_계": 21, "취업자_교외취업자_계": 20, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 4.4, "1차 유지취업률_계": 85.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 65.0, "4차 유지취업률_계": 65.0}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "문헌정보학", "학과명": "문헌정보학과", "졸업자_계": 54, "취업률_계": 34.0, "취업자_합계_계": 18, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 1.9, "1차 유지취업률_계": 76.5, "2차 유지취업률_계": 64.7, "3차 유지취업률_계": 58.8, "4차 유지취업률_계": 58.8}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "심리학", "학과명": "심리학과", "졸업자_계": 68, "취업률_계": 54.9, "취업자_합계_계": 28, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 4, "진학률_계": 20.6, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 83.3, "4차 유지취업률_계": 79.2}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "역사ㆍ고고학", "학과명": "사학과", "졸업자_계": 38, "취업률_계": 50.0, "취업자_합계_계": 16, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 10.5, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 93.3, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 80.0}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "종교학", "학과명": "기독교학과", "졸업자_계": 10, "취업률_계": 0.0, "취업자_합계_계": 0, "취업자_교외취업자_계": 0, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 30.0, "1차 유지취업률_계": 0.0, "2차 유지취업률_계": 0.0, "3차 유지취업률_계": 0.0, "4차 유지취업률_계": 0.0}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "국제지역학", "학과명": "미국학전공", "졸업자_계": 31, "취업률_계": 65.5, "취업자_합계_계": 19, "취업자_교외취업자_계": 13, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 3, "진학률_계": 3.2, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 92.3, "3차 유지취업률_계": 92.3, "4차 유지취업률_계": 92.3}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "국제지역학", "학과명": "독일유럽학과", "졸업자_계": 47, "취업률_계": 55.3, "취업자_합계_계": 26, "취업자_교외취업자_계": 19, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 0.0, "1차 유지취업률_계": 78.9, "2차 유지취업률_계": 73.7, "3차 유지취업률_계": 68.4, "4차 유지취업률_계": 68.4}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "철학ㆍ윤리학", "학과명": "철학과", "졸업자_계": 25, "취업률_계": 50.0, "취업자_합계_계": 12, "취업자_교외취업자_계": 11, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 63.6, "2차 유지취업률_계": 63.6, "3차 유지취업률_계": 54.5, "4차 유지취업률_계": 54.5}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "경영정보학전공", "졸업자_계": 93, "취업률_계": 58.6, "취업자_합계_계": 51, "취업자_교외취업자_계": 45, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 2, "진학률_계": 3.2, "1차 유지취업률_계": 89.1, "2차 유지취업률_계": 78.3, "3차 유지취업률_계": 67.4, "4차 유지취업률_계": 63.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "경영학전공", "졸업자_계": 229, "취업률_계": 55.6, "취업자_합계_계": 104, "취업자_교외취업자_계": 96, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 3, "진학률_계": 1.3, "1차 유지취업률_계": 92.9, "2차 유지취업률_계": 88.8, "3차 유지취업률_계": 79.6, "4차 유지취업률_계": 77.6}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "관광경영학전공", "졸업자_계": 133, "취업률_계": 54.7, "취업자_합계_계": 58, "취업자_교외취업자_계": 50, "취업자_교내취업자_계": 4, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 3, "진학률_계": 0.8, "1차 유지취업률_계": 90.7, "2차 유지취업률_계": 79.6, "3차 유지취업률_계": 64.8, "4차 유지취업률_계": 63.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "스포츠마케팅학과", "졸업자_계": 40, "취업률_계": 70.0, "취업자_합계_계": 28, "취업자_교외취업자_계": 23, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 4, "진학률_계": 0.0, "1차 유지취업률_계": 91.7, "2차 유지취업률_계": 79.2, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 75.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "Department of International Business", "졸업자_계": 13, "취업률_계": 76.9, "취업자_합계_계": 10, "취업자_교외취업자_계": 9, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 90.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 80.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경제학", "학과명": "경제금융학전공", "졸업자_계": 121, "취업률_계": 58.6, "취업자_합계_계": 65, "취업자_교외취업자_계": 60, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 4, "진학률_계": 1.7, "1차 유지취업률_계": 90.2, "2차 유지취업률_계": 77.0, "3차 유지취업률_계": 63.9, "4차 유지취업률_계": 62.3}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "광고·홍보학", "학과명": "광고홍보학전공", "졸업자_계": 68, "취업률_계": 73.8, "취업자_합계_계": 48, "취업자_교외취업자_계": 42, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 3, "진학률_계": 1.5, "1차 유지취업률_계": 85.7, "2차 유지취업률_계": 85.7, "3차 유지취업률_계": 78.6, "4차 유지취업률_계": 73.8}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "금융ㆍ회계ㆍ세무학", "학과명": "세무학전공", "졸업자_계": 62, "취업률_계": 50.0, "취업자_합계_계": 31, "취업자_교외취업자_계": 28, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 96.4, "2차 유지취업률_계": 96.4, "3차 유지취업률_계": 89.3, "4차 유지취업률_계": 89.3}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "금융ㆍ회계ㆍ세무학", "학과명": "회계학전공", "졸업자_계": 152, "취업률_계": 52.4, "취업자_합계_계": 75, "취업자_교외취업자_계": 67, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 4, "진학률_계": 0.0, "1차 유지취업률_계": 94.2, "2차 유지취업률_계": 87.0, "3차 유지취업률_계": 81.2, "4차 유지취업률_계": 78.3}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "무역ㆍ유통학", "학과명": "국제통상학전공", "졸업자_계": 255, "취업률_계": 55.5, "취업자_합계_계": 117, "취업자_교외취업자_계": 99, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 13, "진학률_계": 2.0, "1차 유지취업률_계": 89.1, "2차 유지취업률_계": 83.2, "3차 유지취업률_계": 79.2, "4차 유지취업률_계": 77.2}, {"대계열": "사회계열", "중계열": "법률", "소계열": "법학", "학과명": "법학과", "졸업자_계": 92, "취업률_계": 34.1, "취업자_합계_계": 29, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 2, "진학률_계": 2.2, "1차 유지취업률_계": 88.0, "2차 유지취업률_계": 76.0, "3차 유지취업률_계": 72.0, "4차 유지취업률_계": 72.0}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "가족ㆍ사회ㆍ복지학", "학과명": "사회복지학과", "졸업자_계": 60, "취업률_계": 47.4, "취업자_합계_계": 27, "취업자_교외취업자_계": 26, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 1.7, "1차 유지취업률_계": 84.6, "2차 유지취업률_계": 80.8, "3차 유지취업률_계": 69.2, "4차 유지취업률_계": 65.4}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "국제학", "학과명": "Department of International Relations", "졸업자_계": 15, "취업률_계": 58.3, "취업자_합계_계": 7, "취업자_교외취업자_계": 6, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 20.0, "1차 유지취업률_계": 57.1, "2차 유지취업률_계": 57.1, "3차 유지취업률_계": 42.9, "4차 유지취업률_계": 42.9}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "도시ㆍ지역학", "학과명": "도시계획학전공", "졸업자_계": 34, "취업률_계": 65.5, "취업자_합계_계": 19, "취업자_교외취업자_계": 19, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 5.9, "1차 유지취업률_계": 94.7, "2차 유지취업률_계": 89.5, "3차 유지취업률_계": 84.2, "4차 유지취업률_계": 84.2}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "사회학", "학과명": "사회학과", "졸업자_계": 22, "취업률_계": 54.5, "취업자_합계_계": 12, "취업자_교외취업자_계": 10, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 90.9, "2차 유지취업률_계": 90.9, "3차 유지취업률_계": 63.6, "4차 유지취업률_계": 54.5}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "언론ㆍ방송ㆍ매체학", "학과명": "언론영상학전공", "졸업자_계": 83, "취업률_계": 53.9, "취업자_합계_계": 41, "취업자_교외취업자_계": 31, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 8, "진학률_계": 3.6, "1차 유지취업률_계": 80.6, "2차 유지취업률_계": 71.0, "3차 유지취업률_계": 64.5, "4차 유지취업률_계": 64.5}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "정치외교학", "학과명": "정치외교학전공", "졸업자_계": 46, "취업률_계": 52.3, "취업자_합계_계": 23, "취업자_교외취업자_계": 20, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 2.2, "1차 유지취업률_계": 80.0, "2차 유지취업률_계": 70.0, "3차 유지취업률_계": 65.0, "4차 유지취업률_계": 65.0}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "행정학", "학과명": "경찰행정학과", "졸업자_계": 138, "취업률_계": 63.4, "취업자_합계_계": 85, "취업자_교외취업자_계": 79, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 2, "진학률_계": 1.4, "1차 유지취업률_계": 95.1, "2차 유지취업률_계": 95.1, "3차 유지취업률_계": 91.4, "4차 유지취업률_계": 91.4}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "행정학", "학과명": "행정학전공", "졸업자_계": 74, "취업률_계": 46.5, "취업자_합계_계": 33, "취업자_교외취업자_계": 27, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 3, "진학률_계": 1.4, "1차 유지취업률_계": 96.3, "2차 유지취업률_계": 92.6, "3차 유지취업률_계": 85.2, "4차 유지취업률_계": 85.2}, {"대계열": "교육계열", "중계열": "교육일반", "소계열": "교육학", "학과명": "교육학과", "졸업자_계": 20, "취업률_계": 37.5, "취업자_합계_계": 6, "취업자_교외취업자_계": 3, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 20.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 66.7}, {"대계열": "교육계열", "중계열": "유아교육", "소계열": "유아교육학", "학과명": "유아교육과", "졸업자_계": 20, "취업률_계": 100.0, "취업자_합계_계": 20, "취업자_교외취업자_계": 20, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 85.0, "2차 유지취업률_계": 85.0, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 75.0}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "국어교육과", "졸업자_계": 19, "취업률_계": 21.1, "취업자_합계_계": 4, "취업자_교외취업자_계": 1, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 0.0, "4차 유지취업률_계": 0.0}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "영어교육과", "졸업자_계": 18, "취업률_계": 47.1, "취업자_합계_계": 8, "취업자_교외취업자_계": 7, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 5.6, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 85.7, "3차 유지취업률_계": 71.4, "4차 유지취업률_계": 71.4}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "한문교육과", "졸업자_계": 15, "취업률_계": 53.8, "취업자_합계_계": 7, "취업자_교외취업자_계": 4, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 13.3, "1차 유지취업률_계": 50.0, "2차 유지취업률_계": 50.0, "3차 유지취업률_계": 50.0, "4차 유지취업률_계": 50.0}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "한국어교육전공", "졸업자_계": 39, "취업률_계": 70.0, "취업자_합계_계": 14, "취업자_교외취업자_계": 11, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 2.6, "1차 유지취업률_계": 90.9, "2차 유지취업률_계": 90.9, "3차 유지취업률_계": 90.9, "4차 유지취업률_계": 90.9}, {"대계열": "공학계열", "중계열": "건축", "소계열": "건축ㆍ설비공학", "학과명": "건축공학전공", "졸업자_계": 47, "취업률_계": 63.0, "취업자_합계_계": 29, "취업자_교외취업자_계": 28, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 2.1, "1차 유지취업률_계": 96.4, "2차 유지취업률_계": 92.9, "3차 유지취업률_계": 92.9, "4차 유지취업률_계": 89.3}, {"대계열": "공학계열", "중계열": "건축", "소계열": "건축학", "학과명": "건축학전공", "졸업자_계": 37, "취업률_계": 58.3, "취업자_합계_계": 21, "취업자_교외취업자_계": 21, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 2.7, "1차 유지취업률_계": 95.2, "2차 유지취업률_계": 85.7, "3차 유지취업률_계": 85.7, "4차 유지취업률_계": 81.0}, {"대계열": "공학계열", "중계열": "토목ㆍ도시", "소계열": "토목공학", "학과명": "토목공학전공", "졸업자_계": 47, "취업률_계": 70.0, "취업자_합계_계": 28, "취업자_교외취업자_계": 26, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 10.6, "1차 유지취업률_계": 92.6, "2차 유지취업률_계": 88.9, "3차 유지취업률_계": 88.9, "4차 유지취업률_계": 88.9}, {"대계열": "공학계열", "중계열": "교통ㆍ운송", "소계열": "지상교통공학", "학과명": "교통공학전공", "졸업자_계": 34, "취업률_계": 69.0, "취업자_합계_계": 20, "취업자_교외취업자_계": 19, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 8.8, "1차 유지취업률_계": 89.5, "2차 유지취업률_계": 89.5, "3차 유지취업률_계": 89.5, "4차 유지취업률_계": 84.2}, {"대계열": "공학계열", "중계열": "기계ㆍ금속", "소계열": "기계공학", "학과명": "기계공학전공", "졸업자_계": 167, "취업률_계": 68.2, "취업자_합계_계": 103, "취업자_교외취업자_계": 101, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 6.6, "1차 유지취업률_계": 93.1, "2차 유지취업률_계": 91.1, "3차 유지취업률_계": 87.1, "4차 유지취업률_계": 85.1}, {"대계열": "공학계열", "중계열": "전기ㆍ전자", "소계열": "전자공학", "학과명": "전자공학전공", "졸업자_계": 59, "취업률_계": 61.8, "취업자_합계_계": 34, "취업자_교외취업자_계": 32, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 5.1, "1차 유지취업률_계": 91.2, "2차 유지취업률_계": 88.2, "3차 유지취업률_계": 85.3, "4차 유지취업률_계": 82.4}, {"대계열": "공학계열", "중계열": "정밀ㆍ에너지", "소계열": "에너지공학", "학과명": "전기에너지공학전공", "졸업자_계": 36, "취업률_계": 58.1, "취업자_합계_계": 18, "취업자_교외취업자_계": 18, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 11.1, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 88.9, "4차 유지취업률_계": 88.9}, {"대계열": "공학계열", "중계열": "소재ㆍ재료", "소계열": "신소재공학", "학과명": "신소재공학전공", "졸업자_계": 31, "취업률_계": 60.0, "취업자_합계_계": 18, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 0, "진학률_계": 3.2, "1차 유지취업률_계": 92.9, "2차 유지취업률_계": 92.9, "3차 유지취업률_계": 92.9, "4차 유지취업률_계": 92.9}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "전산학ㆍ컴퓨터공학", "학과명": "컴퓨터공학전공", "졸업자_계": 116, "취업률_계": 47.4, "취업자_합계_계": 46, "취업자_교외취업자_계": 42, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 8.6, "1차 유지취업률_계": 88.4, "2차 유지취업률_계": 83.7, "3차 유지취업률_계": 81.4, "4차 유지취업률_계": 81.4}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "응용소프트웨어공학", "학과명": "게임모바일공학전공", "졸업자_계": 47, "취업률_계": 61.9, "취업자_합계_계": 26, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 2.1, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 91.7, "3차 유지취업률_계": 83.3, "4차 유지취업률_계": 79.2}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "응용소프트웨어공학", "학과명": "디지펜게임공학전공", "졸업자_계": 4, "취업률_계": 0.0, "취업자_합계_계": 0, "취업자_교외취업자_계": 0, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 0.0, "2차 유지취업률_계": 0.0, "3차 유지취업률_계": 0.0, "4차 유지취업률_계": 0.0}, {"대계열": "공학계열", "중계열": "산업", "소계열": "산업공학", "학과명": "산업공학과", "졸업자_계": 23, "취업률_계": 73.9, "취업자_합계_계": 17, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 86.7, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 73.3, "4차 유지취업률_계": 73.3}, {"대계열": "공학계열", "중계열": "화공", "소계열": "화학공학", "학과명": "화학공학전공", "졸업자_계": 91, "취업률_계": 51.3, "취업자_합계_계": 40, "취업자_교외취업자_계": 39, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 13.2, "1차 유지취업률_계": 89.7, "2차 유지취업률_계": 87.2, "3차 유지취업률_계": 82.1, "4차 유지취업률_계": 79.5}, {"대계열": "공학계열", "중계열": "기타", "소계열": "기전공학", "학과명": "로봇공학전공", "졸업자_계": 33, "취업률_계": 80.8, "취업자_합계_계": 21, "취업자_교외취업자_계": 21, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 18.2, "1차 유지취업률_계": 95.2, "2차 유지취업률_계": 95.2, "3차 유지취업률_계": 95.2, "4차 유지취업률_계": 95.2}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "생명과학", "학과명": "생명과학전공", "졸업자_계": 57, "취업률_계": 35.7, "취업자_합계_계": 15, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 24.6, "1차 유지취업률_계": 80.0, "2차 유지취업률_계": 73.3, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 66.7}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "화학", "학과명": "화학전공", "졸업자_계": 30, "취업률_계": 40.9, "취업자_합계_계": 9, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 26.7, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 87.5, "3차 유지취업률_계": 87.5, "4차 유지취업률_계": 87.5}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "지구환경학전공", "졸업자_계": 32, "취업률_계": 64.5, "취업자_합계_계": 20, "취업자_교외취업자_계": 19, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 3.1, "1차 유지취업률_계": 94.7, "2차 유지취업률_계": 94.7, "3차 유지취업률_계": 78.9, "4차 유지취업률_계": 73.7}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "환경과학전공", "졸업자_계": 45, "취업률_계": 65.9, "취업자_합계_계": 27, "취업자_교외취업자_계": 20, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 4, "진학률_계": 6.7, "1차 유지취업률_계": 95.2, "2차 유지취업률_계": 95.2, "3차 유지취업률_계": 90.5, "4차 유지취업률_계": 90.5}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "생태조경학전공", "졸업자_계": 43, "취업률_계": 61.3, "취업자_합계_계": 19, "취업자_교외취업자_계": 18, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 4.7, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 94.4, "3차 유지취업률_계": 88.9, "4차 유지취업률_계": 88.9}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "식품영양학", "학과명": "식품가공학전공", "졸업자_계": 41, "취업률_계": 53.1, "취업자_합계_계": 17, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 22.0, "1차 유지취업률_계": 86.7, "2차 유지취업률_계": 73.3, "3차 유지취업률_계": 73.3, "4차 유지취업률_계": 73.3}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "식품영양학", "학과명": "식품영양학전공", "졸업자_계": 65, "취업률_계": 57.1, "취업자_합계_계": 32, "취업자_교외취업자_계": 31, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 9.2, "1차 유지취업률_계": 90.3, "2차 유지취업률_계": 80.6, "3차 유지취업률_계": 71.0, "4차 유지취업률_계": 67.7}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "의류ㆍ의상학", "학과명": "패션마케팅학전공", "졸업자_계": 37, "취업률_계": 69.4, "취업자_합계_계": 25, "취업자_교외취업자_계": 21, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 2, "진학률_계": 2.7, "1차 유지취업률_계": 90.5, "2차 유지취업률_계": 71.4, "3차 유지취업률_계": 71.4, "4차 유지취업률_계": 71.4}, {"대계열": "자연계열", "중계열": "수학ㆍ물리ㆍ천문ㆍ지리", "소계열": "수학", "학과명": "수학전공", "졸업자_계": 19, "취업률_계": 47.1, "취업자_합계_계": 8, "취업자_교외취업자_계": 5, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 5.3, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 60.0, "4차 유지취업률_계": 60.0}, {"대계열": "자연계열", "중계열": "수학ㆍ물리ㆍ천문ㆍ지리", "소계열": "통계학", "학과명": "통계학전공", "졸업자_계": 38, "취업률_계": 33.3, "취업자_합계_계": 11, "취업자_교외취업자_계": 10, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 13.2, "1차 유지취업률_계": 90.0, "2차 유지취업률_계": 90.0, "3차 유지취업률_계": 90.0, "4차 유지취업률_계": 90.0}, {"대계열": "의약계열", "중계열": "의료", "소계열": "의학", "학과명": "의학과", "졸업자_계": 68, "취업률_계": 100.0, "취업자_합계_계": 66, "취업자_교외취업자_계": 66, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 72.7, "2차 유지취업률_계": 15.2, "3차 유지취업률_계": 10.6, "4차 유지취업률_계": 10.6}, {"대계열": "의약계열", "중계열": "간호", "소계열": "간호학", "학과명": "간호학과", "졸업자_계": 133, "취업률_계": 72.9, "취업자_합계_계": 97, "취업자_교외취업자_계": 95, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 98.9, "2차 유지취업률_계": 95.8, "3차 유지취업률_계": 95.8, "4차 유지취업률_계": 95.8}, {"대계열": "의약계열", "중계열": "약학", "소계열": "약학", "학과명": "약학과", "졸업자_계": 16, "취업률_계": 87.5, "취업자_합계_계": 14, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 85.7}, {"대계열": "의약계열", "중계열": "약학", "소계열": "약학", "학과명": "제약학과", "졸업자_계": 14, "취업률_계": 100.0, "취업자_합계_계": 14, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 85.7, "2차 유지취업률_계": 78.6, "3차 유지취업률_계": 71.4, "4차 유지취업률_계": 64.3}, {"대계열": "의약계열", "중계열": "치료ㆍ보건", "소계열": "보건학", "학과명": "공중보건학전공", "졸업자_계": 43, "취업률_계": 68.3, "취업자_합계_계": 28, "취업자_교외취업자_계": 28, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 2.3, "1차 유지취업률_계": 82.1, "2차 유지취업률_계": 78.6, "3차 유지취업률_계": 67.9, "4차 유지취업률_계": 67.9}, {"대계열": "의약계열", "중계열": "치료ㆍ보건", "소계열": "의료공학", "학과명": "의용공학과", "졸업자_계": 37, "취업률_계": 68.8, "취업자_합계_계": 22, "취업자_교외취업자_계": 17, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 13.5, "1차 유지취업률_계": 89.5, "2차 유지취업률_계": 89.5, "3차 유지취업률_계": 73.7, "4차 유지취업률_계": 68.4}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "산업디자인", "학과명": "산업디자인전공", "졸업자_계": 33, "취업률_계": 44.8, "취업자_합계_계": 13, "취업자_교외취업자_계": 9, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 4, "진학률_계": 6.1, "1차 유지취업률_계": 77.8, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 44.4, "4차 유지취업률_계": 44.4}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "시각디자인", "학과명": "시각디자인전공", "졸업자_계": 44, "취업률_계": 56.4, "취업자_합계_계": 22, "취업자_교외취업자_계": 21, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 85.7, "2차 유지취업률_계": 81.0, "3차 유지취업률_계": 76.2, "4차 유지취업률_계": 76.2}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "패션디자인", "학과명": "패션디자인전공", "졸업자_계": 52, "취업률_계": 66.0, "취업자_합계_계": 31, "취업자_교외취업자_계": 26, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 5.8, "1차 유지취업률_계": 80.8, "2차 유지취업률_계": 73.1, "3차 유지취업률_계": 65.4, "4차 유지취업률_계": 65.4}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "기타디자인", "학과명": "공예디자인전공", "졸업자_계": 29, "취업률_계": 68.0, "취업자_합계_계": 17, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 10.3, "1차 유지취업률_계": 78.6, "2차 유지취업률_계": 78.6, "3차 유지취업률_계": 64.3, "4차 유지취업률_계": 64.3}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "기타디자인", "학과명": "텍스타일디자인전공", "졸업자_계": 26, "취업률_계": 65.4, "취업자_합계_계": 17, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 68.8, "2차 유지취업률_계": 62.5, "3차 유지취업률_계": 56.3, "4차 유지취업률_계": 56.3}, {"대계열": "예체능계열", "중계열": "응용예술", "소계열": "사진ㆍ만화", "학과명": "영상애니메이션전공", "졸업자_계": 48, "취업률_계": 42.2, "취업자_합계_계": 19, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 4, "진학률_계": 2.1, "1차 유지취업률_계": 78.6, "2차 유지취업률_계": 78.6, "3차 유지취업률_계": 71.4, "4차 유지취업률_계": 71.4}, {"대계열": "예체능계열", "중계열": "응용예술", "소계열": "사진ㆍ만화", "학과명": "사진미디어전공", "졸업자_계": 41, "취업률_계": 50.0, "취업자_합계_계": 19, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 93.8, "2차 유지취업률_계": 87.5, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 68.8}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "무용", "학과명": "무용전공", "졸업자_계": 22, "취업률_계": 66.7, "취업자_합계_계": 10, "취업자_교외취업자_계": 4, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 27.3, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 50.0, "4차 유지취업률_계": 50.0}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "사회체육학전공", "졸업자_계": 61, "취업률_계": 60.8, "취업자_합계_계": 31, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 7, "진학률_계": 4.9, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 70.8, "4차 유지취업률_계": 62.5}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "체육학전공", "졸업자_계": 56, "취업률_계": 59.2, "취업자_합계_계": 29, "취업자_교외취업자_계": 22, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 6, "진학률_계": 8.9, "1차 유지취업률_계": 90.9, "2차 유지취업률_계": 90.9, "3차 유지취업률_계": 86.4, "4차 유지취업률_계": 86.4}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "태권도학과", "졸업자_계": 49, "취업률_계": 65.9, "취업자_합계_계": 29, "취업자_교외취업자_계": 23, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 5, "진학률_계": 6.1, "1차 유지취업률_계": 78.3, "2차 유지취업률_계": 78.3, "3차 유지취업률_계": 73.9, "4차 유지취업률_계": 73.9}, {"대계열": "예체능계열", "중계열": "미술ㆍ조형", "소계열": "순수미술", "학과명": "회화전공", "졸업자_계": 41, "취업률_계": 27.0, "취업자_합계_계": 10, "취업자_교외취업자_계": 6, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 3, "진학률_계": 7.3, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 83.3, "4차 유지취업률_계": 83.3}, {"대계열": "예체능계열", "중계열": "연극ㆍ영화", "소계열": "연극ㆍ영화", "학과명": "연극뮤지컬전공", "졸업자_계": 35, "취업률_계": 40.7, "취업자_합계_계": 11, "취업자_교외취업자_계": 3, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 11.4, "1차 유지취업률_계": 33.3, "2차 유지취업률_계": 0.0, "3차 유지취업률_계": 0.0, "4차 유지취업률_계": 0.0}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기악", "학과명": "관현악전공", "졸업자_계": 55, "취업률_계": 33.3, "취업자_합계_계": 15, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 7, "진학률_계": 16.4, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 62.5, "3차 유지취업률_계": 62.5, "4차 유지취업률_계": 62.5}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기악", "학과명": "피아노전공", "졸업자_계": 48, "취업률_계": 53.3, "취업자_합계_계": 16, "취업자_교외취업자_계": 5, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 9, "진학률_계": 35.4, "1차 유지취업률_계": 80.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 80.0}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "성악", "학과명": "성악전공", "졸업자_계": 46, "취업률_계": 41.7, "취업자_합계_계": 10, "취업자_교외취업자_계": 5, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 41.3, "1차 유지취업률_계": 80.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 60.0, "4차 유지취업률_계": 60.0}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "작곡", "학과명": "작곡전공", "졸업자_계": 36, "취업률_계": 46.4, "취업자_합계_계": 13, "취업자_교외취업자_계": 13, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 22.2, "1차 유지취업률_계": 69.2, "2차 유지취업률_계": 61.5, "3차 유지취업률_계": 53.8, "4차 유지취업률_계": 53.8}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기타음악", "학과명": "뮤직프로덕션전공", "졸업자_계": 31, "취업률_계": 58.6, "취업자_합계_계": 17, "취업자_교외취업자_계": 7, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 9, "진학률_계": 6.5, "1차 유지취업률_계": 71.4, "2차 유지취업률_계": 42.9, "3차 유지취업률_계": 28.6, "4차 유지취업률_계": 28.6}], "2024": [{"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "국어ㆍ국문학", "학과명": "국어국문학전공", "졸업자_계": 40, "취업률_계": 48.6, "취업자_합계_계": 17, "취업자_교외취업자_계": 13, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 7.5, "1차 유지취업률_계": 84.6, "2차 유지취업률_계": 76.9, "3차 유지취업률_계": 69.2, "4차 유지취업률_계": 69.2}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "국어ㆍ국문학", "학과명": "문예창작학과", "졸업자_계": 29, "취업률_계": 45.0, "취업자_합계_계": 9, "취업자_교외취업자_계": 7, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 0, "진학률_계": 31.0, "1차 유지취업률_계": 85.7, "2차 유지취업률_계": 85.7, "3차 유지취업률_계": 85.7, "4차 유지취업률_계": 71.4}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "일본어ㆍ문학", "학과명": "일본어일본학과", "졸업자_계": 101, "취업률_계": 39.4, "취업자_합계_계": 37, "취업자_교외취업자_계": 32, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 4, "진학률_계": 3.0, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 81.3, "3차 유지취업률_계": 62.5, "4차 유지취업률_계": 59.4}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "중국어ㆍ문학", "학과명": "중국어중국학과", "졸업자_계": 118, "취업률_계": 53.4, "취업자_합계_계": 63, "취업자_교외취업자_계": 49, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 8, "진학률_계": 0.0, "1차 유지취업률_계": 82.4, "2차 유지취업률_계": 80.4, "3차 유지취업률_계": 70.6, "4차 유지취업률_계": 68.6}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "영미어ㆍ문학", "학과명": "영어영문학과", "졸업자_계": 69, "취업률_계": 40.3, "취업자_합계_계": 27, "취업자_교외취업자_계": 18, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 9, "진학률_계": 1.4, "1차 유지취업률_계": 77.8, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 61.1}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "러시아어ㆍ문학", "학과명": "러시아중앙아시아학과", "졸업자_계": 18, "취업률_계": 77.8, "취업자_합계_계": 14, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 75.0}, {"대계열": "인문계열", "중계열": "언어ㆍ문학", "소계열": "스페인어ㆍ문학", "학과명": "스페인어중남미학과", "졸업자_계": 41, "취업률_계": 53.7, "취업자_합계_계": 22, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 4, "진학률_계": 0.0, "1차 유지취업률_계": 70.6, "2차 유지취업률_계": 52.9, "3차 유지취업률_계": 52.9, "4차 유지취업률_계": 52.9}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "문헌정보학", "학과명": "문헌정보학과", "졸업자_계": 56, "취업률_계": 48.1, "취업자_합계_계": 26, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 3.6, "1차 유지취업률_계": 80.8, "2차 유지취업률_계": 80.8, "3차 유지취업률_계": 80.8, "4차 유지취업률_계": 80.8}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "심리학", "학과명": "심리학과", "졸업자_계": 62, "취업률_계": 42.9, "취업자_합계_계": 21, "취업자_교외취업자_계": 19, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 21.0, "1차 유지취업률_계": 89.5, "2차 유지취업률_계": 78.9, "3차 유지취업률_계": 63.2, "4차 유지취업률_계": 63.2}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "역사ㆍ고고학", "학과명": "사학과", "졸업자_계": 31, "취업률_계": 58.3, "취업자_합계_계": 14, "취업자_교외취업자_계": 11, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 22.6, "1차 유지취업률_계": 90.9, "2차 유지취업률_계": 90.9, "3차 유지취업률_계": 72.7, "4차 유지취업률_계": 72.7}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "종교학", "학과명": "기독교학과", "졸업자_계": 9, "취업률_계": 0.0, "취업자_합계_계": 0, "취업자_교외취업자_계": 0, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 55.6, "1차 유지취업률_계": 0.0, "2차 유지취업률_계": 0.0, "3차 유지취업률_계": 0.0, "4차 유지취업률_계": 0.0}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "국제지역학", "학과명": "미국학전공", "졸업자_계": 22, "취업률_계": 45.0, "취업자_합계_계": 9, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 9.1, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 87.5, "3차 유지취업률_계": 87.5, "4차 유지취업률_계": 87.5}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "국제지역학", "학과명": "독일유럽학과", "졸업자_계": 34, "취업률_계": 48.5, "취업자_합계_계": 16, "취업자_교외취업자_계": 13, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 1, "진학률_계": 2.9, "1차 유지취업률_계": 84.6, "2차 유지취업률_계": 84.6, "3차 유지취업률_계": 69.2, "4차 유지취업률_계": 69.2}, {"대계열": "인문계열", "중계열": "인문과학", "소계열": "철학ㆍ윤리학", "학과명": "철학과", "졸업자_계": 19, "취업률_계": 43.8, "취업자_합계_계": 7, "취업자_교외취업자_계": 5, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 15.8, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 80.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "경영정보학전공", "졸업자_계": 67, "취업률_계": 55.2, "취업자_합계_계": 37, "취업자_교외취업자_계": 30, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 6, "진학률_계": 0.0, "1차 유지취업률_계": 90.3, "2차 유지취업률_계": 87.1, "3차 유지취업률_계": 77.4, "4차 유지취업률_계": 71.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "경영학전공", "졸업자_계": 201, "취업률_계": 58.4, "취업자_합계_계": 94, "취업자_교외취업자_계": 84, "취업자_교내취업자_계": 4, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 4, "진학률_계": 1.0, "1차 유지취업률_계": 96.6, "2차 유지취업률_계": 90.9, "3차 유지취업률_계": 89.8, "4차 유지취업률_계": 85.2}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "관광경영학전공", "졸업자_계": 125, "취업률_계": 64.5, "취업자_합계_계": 60, "취업자_교외취업자_계": 54, "취업자_교내취업자_계": 3, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 2.4, "1차 유지취업률_계": 84.2, "2차 유지취업률_계": 82.5, "3차 유지취업률_계": 77.2, "4차 유지취업률_계": 75.4}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "스포츠마케팅학과", "졸업자_계": 33, "취업률_계": 73.3, "취업자_합계_계": 22, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 4, "진학률_계": 9.1, "1차 유지취업률_계": 81.3, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 62.5, "4차 유지취업률_계": 56.3}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경영학", "학과명": "Department of International Business", "졸업자_계": 21, "취업률_계": 68.4, "취업자_합계_계": 13, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 66.7}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "경제학", "학과명": "경제금융학전공", "졸업자_계": 104, "취업률_계": 50.0, "취업자_합계_계": 46, "취업자_교외취업자_계": 41, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 92.9, "2차 유지취업률_계": 85.7, "3차 유지취업률_계": 76.2, "4차 유지취업률_계": 69.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "광고·홍보학", "학과명": "광고홍보학전공", "졸업자_계": 65, "취업률_계": 54.0, "취업자_합계_계": 34, "취업자_교외취업자_계": 29, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 89.7, "2차 유지취업률_계": 79.3, "3차 유지취업률_계": 69.0, "4차 유지취업률_계": 69.0}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "금융ㆍ회계ㆍ세무학", "학과명": "세무학전공", "졸업자_계": 47, "취업률_계": 41.3, "취업자_합계_계": 19, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 93.8, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 68.8, "4차 유지취업률_계": 68.8}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "금융ㆍ회계ㆍ세무학", "학과명": "회계학전공", "졸업자_계": 137, "취업률_계": 51.8, "취업자_합계_계": 71, "취업자_교외취업자_계": 67, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 91.0, "2차 유지취업률_계": 89.6, "3차 유지취업률_계": 85.1, "4차 유지취업률_계": 82.1}, {"대계열": "사회계열", "중계열": "경영ㆍ경제", "소계열": "무역ㆍ유통학", "학과명": "국제통상학전공", "졸업자_계": 216, "취업률_계": 59.6, "취업자_합계_계": 102, "취업자_교외취업자_계": 94, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 2, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 5, "진학률_계": 0.5, "1차 유지취업률_계": 89.4, "2차 유지취업률_계": 81.9, "3차 유지취업률_계": 77.7, "4차 유지취업률_계": 72.3}, {"대계열": "사회계열", "중계열": "법률", "소계열": "법학", "학과명": "법학과", "졸업자_계": 86, "취업률_계": 45.3, "취업자_합계_계": 39, "취업자_교외취업자_계": 33, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 4, "진학률_계": 0.0, "1차 유지취업률_계": 97.0, "2차 유지취업률_계": 90.9, "3차 유지취업률_계": 84.8, "4차 유지취업률_계": 84.8}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "가족ㆍ사회ㆍ복지학", "학과명": "사회복지학과", "졸업자_계": 60, "취업률_계": 65.5, "취업자_합계_계": 38, "취업자_교외취업자_계": 37, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 89.2, "2차 유지취업률_계": 81.1, "3차 유지취업률_계": 75.7, "4차 유지취업률_계": 75.7}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "국제학", "학과명": "Department of International Relations", "졸업자_계": 11, "취업률_계": 45.5, "취업자_합계_계": 5, "취업자_교외취업자_계": 3, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "도시ㆍ지역학", "학과명": "도시계획학전공", "졸업자_계": 34, "취업률_계": 53.3, "취업자_합계_계": 16, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 5.9, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 87.5, "3차 유지취업률_계": 81.3, "4차 유지취업률_계": 68.8}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "사회학", "학과명": "사회학과", "졸업자_계": 40, "취업률_계": 52.5, "취업자_합계_계": 21, "취업자_교외취업자_계": 17, "취업자_교내취업자_계": 2, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 89.5, "2차 유지취업률_계": 84.2, "3차 유지취업률_계": 68.4, "4차 유지취업률_계": 68.4}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "언론ㆍ방송ㆍ매체학", "학과명": "언론영상학전공", "졸업자_계": 72, "취업률_계": 54.4, "취업자_합계_계": 37, "취업자_교외취업자_계": 29, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 4, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 86.7, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 73.3, "4차 유지취업률_계": 73.3}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "정치외교학", "학과명": "정치외교학전공", "졸업자_계": 28, "취업률_계": 29.6, "취업자_합계_계": 8, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 87.5, "4차 유지취업률_계": 87.5}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "행정학", "학과명": "경찰행정학과", "졸업자_계": 108, "취업률_계": 51.9, "취업자_합계_계": 54, "취업자_교외취업자_계": 48, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 3, "진학률_계": 2.8, "1차 유지취업률_계": 97.9, "2차 유지취업률_계": 93.8, "3차 유지취업률_계": 93.8, "4차 유지취업률_계": 91.7}, {"대계열": "사회계열", "중계열": "사회과학", "소계열": "행정학", "학과명": "행정학전공", "졸업자_계": 82, "취업률_계": 52.6, "취업자_합계_계": 41, "취업자_교외취업자_계": 38, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 1.2, "1차 유지취업률_계": 82.1, "2차 유지취업률_계": 79.5, "3차 유지취업률_계": 69.2, "4차 유지취업률_계": 61.5}, {"대계열": "교육계열", "중계열": "교육일반", "소계열": "교육학", "학과명": "교육학과", "졸업자_계": 10, "취업률_계": 55.6, "취업자_합계_계": 5, "취업자_교외취업자_계": 3, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 10.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 66.7}, {"대계열": "교육계열", "중계열": "유아교육", "소계열": "유아교육학", "학과명": "유아교육과", "졸업자_계": 22, "취업률_계": 72.7, "취업자_합계_계": 16, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 86.7, "2차 유지취업률_계": 86.7, "3차 유지취업률_계": 86.7, "4차 유지취업률_계": 86.7}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "국어교육과", "졸업자_계": 20, "취업률_계": 50.0, "취업자_합계_계": 10, "취업자_교외취업자_계": 4, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 5, "진학률_계": 0.0, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 50.0, "4차 유지취업률_계": 50.0}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "영어교육과", "졸업자_계": 12, "취업률_계": 33.3, "취업자_합계_계": 4, "취업자_교외취업자_계": 2, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 50.0, "3차 유지취업률_계": 50.0, "4차 유지취업률_계": 50.0}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "한문교육과", "졸업자_계": 14, "취업률_계": 75.0, "취업자_합계_계": 6, "취업자_교외취업자_계": 5, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 42.9, "1차 유지취업률_계": 80.0, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 80.0}, {"대계열": "교육계열", "중계열": "중등교육", "소계열": "언어교육", "학과명": "한국어교육전공", "졸업자_계": 73, "취업률_계": 55.2, "취업자_합계_계": 16, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 6.8, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 85.7, "3차 유지취업률_계": 71.4, "4차 유지취업률_계": 64.3}, {"대계열": "공학계열", "중계열": "건축", "소계열": "건축ㆍ설비공학", "학과명": "건축공학전공", "졸업자_계": 55, "취업률_계": 62.0, "취업자_합계_계": 31, "취업자_교외취업자_계": 29, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 9.1, "1차 유지취업률_계": 93.1, "2차 유지취업률_계": 89.7, "3차 유지취업률_계": 89.7, "4차 유지취업률_계": 89.7}, {"대계열": "공학계열", "중계열": "건축", "소계열": "건축학", "학과명": "건축학전공", "졸업자_계": 24, "취업률_계": 56.5, "취업자_합계_계": 13, "취업자_교외취업자_계": 13, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 4.2, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 92.3, "3차 유지취업률_계": 92.3, "4차 유지취업률_계": 84.6}, {"대계열": "공학계열", "중계열": "토목ㆍ도시", "소계열": "토목공학", "학과명": "토목공학전공", "졸업자_계": 52, "취업률_계": 52.2, "취업자_합계_계": 24, "취업자_교외취업자_계": 23, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 7.7, "1차 유지취업률_계": 87.0, "2차 유지취업률_계": 82.6, "3차 유지취업률_계": 82.6, "4차 유지취업률_계": 82.6}, {"대계열": "공학계열", "중계열": "교통ㆍ운송", "소계열": "지상교통공학", "학과명": "교통공학전공", "졸업자_계": 27, "취업률_계": 56.5, "취업자_합계_계": 13, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 14.8, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 75.0}, {"대계열": "공학계열", "중계열": "기계ㆍ금속", "소계열": "기계공학", "학과명": "기계공학전공", "졸업자_계": 166, "취업률_계": 59.3, "취업자_합계_계": 86, "취업자_교외취업자_계": 81, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 3, "진학률_계": 8.4, "1차 유지취업률_계": 95.1, "2차 유지취업률_계": 90.1, "3차 유지취업률_계": 86.4, "4차 유지취업률_계": 86.4}, {"대계열": "공학계열", "중계열": "기계ㆍ금속", "소계열": "자동차공학", "학과명": "자동차공학전공", "졸업자_계": 3, "취업률_계": 100.0, "취업자_합계_계": 3, "취업자_교외취업자_계": 3, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "공학계열", "중계열": "전기ㆍ전자", "소계열": "전자공학", "학과명": "전자공학전공", "졸업자_계": 60, "취업률_계": 63.3, "취업자_합계_계": 38, "취업자_교외취업자_계": 34, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 94.1, "2차 유지취업률_계": 91.2, "3차 유지취업률_계": 91.2, "4차 유지취업률_계": 88.2}, {"대계열": "공학계열", "중계열": "정밀ㆍ에너지", "소계열": "에너지공학", "학과명": "전기에너지공학전공", "졸업자_계": 70, "취업률_계": 41.7, "취업자_합계_계": 25, "취업자_교외취업자_계": 25, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 14.3, "1차 유지취업률_계": 96.0, "2차 유지취업률_계": 84.0, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 80.0}, {"대계열": "공학계열", "중계열": "소재ㆍ재료", "소계열": "신소재공학", "학과명": "신소재공학전공", "졸업자_계": 28, "취업률_계": 46.4, "취업자_합계_계": 13, "취업자_교외취업자_계": 11, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 90.9, "2차 유지취업률_계": 81.8, "3차 유지취업률_계": 81.8, "4차 유지취업률_계": 81.8}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "전산학ㆍ컴퓨터공학", "학과명": "컴퓨터공학전공", "졸업자_계": 133, "취업률_계": 36.5, "취업자_합계_계": 42, "취업자_교외취업자_계": 38, "취업자_교내취업자_계": 1, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 6.0, "1차 유지취업률_계": 87.2, "2차 유지취업률_계": 82.1, "3차 유지취업률_계": 79.5, "4차 유지취업률_계": 79.5}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "응용소프트웨어공학", "학과명": "게임소프트웨어전공", "졸업자_계": 60, "취업률_계": 43.1, "취업자_합계_계": 25, "취업자_교외취업자_계": 23, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 82.6, "2차 유지취업률_계": 82.6, "3차 유지취업률_계": 78.3, "4차 유지취업률_계": 73.9}, {"대계열": "공학계열", "중계열": "컴퓨터ㆍ통신", "소계열": "응용소프트웨어공학", "학과명": "디지펜게임공학전공", "졸업자_계": 21, "취업률_계": 19.0, "취업자_합계_계": 4, "취업자_교외취업자_계": 3, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "공학계열", "중계열": "산업", "소계열": "산업공학", "학과명": "산업공학과", "졸업자_계": 32, "취업률_계": 71.9, "취업자_합계_계": 23, "취업자_교외취업자_계": 21, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 81.0, "2차 유지취업률_계": 76.2, "3차 유지취업률_계": 76.2, "4차 유지취업률_계": 76.2}, {"대계열": "공학계열", "중계열": "화공", "소계열": "화학공학", "학과명": "화학공학전공", "졸업자_계": 89, "취업률_계": 61.8, "취업자_합계_계": 47, "취업자_교외취업자_계": 44, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 14.6, "1차 유지취업률_계": 90.9, "2차 유지취업률_계": 81.8, "3차 유지취업률_계": 70.5, "4차 유지취업률_계": 65.9}, {"대계열": "공학계열", "중계열": "기타", "소계열": "기전공학", "학과명": "로봇공학전공", "졸업자_계": 36, "취업률_계": 57.1, "취업자_합계_계": 16, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 0, "진학률_계": 19.4, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 100.0}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "생명과학", "학과명": "생명과학전공", "졸업자_계": 54, "취업률_계": 32.6, "취업자_합계_계": 15, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 14.8, "1차 유지취업률_계": 91.7, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 66.7}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "화학", "학과명": "화학전공", "졸업자_계": 32, "취업률_계": 55.2, "취업자_합계_계": 16, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 9.4, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 87.5, "3차 유지취업률_계": 68.8, "4차 유지취업률_계": 68.8}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "지구환경학전공", "졸업자_계": 31, "취업률_계": 53.3, "취업자_합계_계": 16, "취업자_교외취업자_계": 14, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 3.2, "1차 유지취업률_계": 71.4, "2차 유지취업률_계": 71.4, "3차 유지취업률_계": 64.3, "4차 유지취업률_계": 64.3}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "환경과학전공", "졸업자_계": 34, "취업률_계": 33.3, "취업자_합계_계": 11, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 87.5, "4차 유지취업률_계": 75.0}, {"대계열": "자연계열", "중계열": "생물ㆍ화학ㆍ환경", "소계열": "환경학", "학과명": "생태조경학전공", "졸업자_계": 35, "취업률_계": 50.0, "취업자_합계_계": 12, "취업자_교외취업자_계": 10, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 90.0, "3차 유지취업률_계": 80.0, "4차 유지취업률_계": 80.0}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "식품영양학", "학과명": "식품가공학전공", "졸업자_계": 39, "취업률_계": 52.9, "취업자_합계_계": 18, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 10.3, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 93.3, "3차 유지취업률_계": 93.3, "4차 유지취업률_계": 93.3}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "식품영양학", "학과명": "식품영양학전공", "졸업자_계": 37, "취업률_계": 50.0, "취업자_합계_계": 15, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 8.1, "1차 유지취업률_계": 93.3, "2차 유지취업률_계": 86.7, "3차 유지취업률_계": 73.3, "4차 유지취업률_계": 73.3}, {"대계열": "자연계열", "중계열": "생활과학", "소계열": "의류ㆍ의상학", "학과명": "패션마케팅학전공", "졸업자_계": 48, "취업률_계": 46.7, "취업자_합계_계": 21, "취업자_교외취업자_계": 18, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 2.1, "1차 유지취업률_계": 94.4, "2차 유지취업률_계": 83.3, "3차 유지취업률_계": 72.2, "4차 유지취업률_계": 50.0}, {"대계열": "자연계열", "중계열": "수학ㆍ물리ㆍ천문ㆍ지리", "소계열": "수학", "학과명": "수학전공", "졸업자_계": 27, "취업률_계": 45.5, "취업자_합계_계": 10, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 14.8, "1차 유지취업률_계": 87.5, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 75.0}, {"대계열": "자연계열", "중계열": "수학ㆍ물리ㆍ천문ㆍ지리", "소계열": "통계학", "학과명": "통계학전공", "졸업자_계": 38, "취업률_계": 27.8, "취업자_합계_계": 10, "취업자_교외취업자_계": 10, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 5.3, "1차 유지취업률_계": 80.0, "2차 유지취업률_계": 70.0, "3차 유지취업률_계": 60.0, "4차 유지취업률_계": 60.0}, {"대계열": "의약계열", "중계열": "의료", "소계열": "의학", "학과명": "의학과", "졸업자_계": 76, "취업률_계": 62.3, "취업자_합계_계": 38, "취업자_교외취업자_계": 36, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 2, "진학률_계": 0.0, "1차 유지취업률_계": 88.9, "2차 유지취업률_계": 72.2, "3차 유지취업률_계": 61.1, "4차 유지취업률_계": 61.1}, {"대계열": "의약계열", "중계열": "간호", "소계열": "간호학", "학과명": "간호학과", "졸업자_계": 128, "취업률_계": 74.0, "취업자_합계_계": 94, "취업자_교외취업자_계": 91, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.8, "1차 유지취업률_계": 85.7, "2차 유지취업률_계": 83.5, "3차 유지취업률_계": 79.1, "4차 유지취업률_계": 76.9}, {"대계열": "의약계열", "중계열": "약학", "소계열": "약학", "학과명": "약학과", "졸업자_계": 17, "취업률_계": 88.2, "취업자_합계_계": 15, "취업자_교외취업자_계": 15, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 86.7, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 73.3, "4차 유지취업률_계": 73.3}, {"대계열": "의약계열", "중계열": "약학", "소계열": "약학", "학과명": "제약학과", "졸업자_계": 19, "취업률_계": 94.1, "취업자_합계_계": 16, "취업자_교외취업자_계": 16, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 81.3, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 62.5, "4차 유지취업률_계": 56.3}, {"대계열": "의약계열", "중계열": "치료ㆍ보건", "소계열": "보건학", "학과명": "공중보건학전공", "졸업자_계": 65, "취업률_계": 56.3, "취업자_합계_계": 36, "취업자_교외취업자_계": 33, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 0.0, "1차 유지취업률_계": 87.9, "2차 유지취업률_계": 84.8, "3차 유지취업률_계": 81.8, "4차 유지취업률_계": 75.8}, {"대계열": "의약계열", "중계열": "치료ㆍ보건", "소계열": "의료공학", "학과명": "의용공학과", "졸업자_계": 30, "취업률_계": 81.5, "취업자_합계_계": 22, "취업자_교외취업자_계": 22, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 6.7, "1차 유지취업률_계": 95.5, "2차 유지취업률_계": 95.5, "3차 유지취업률_계": 90.9, "4차 유지취업률_계": 90.9}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "산업디자인", "학과명": "산업디자인전공", "졸업자_계": 52, "취업률_계": 53.2, "취업자_합계_계": 25, "취업자_교외취업자_계": 21, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 2, "진학률_계": 3.8, "1차 유지취업률_계": 85.7, "2차 유지취업률_계": 76.2, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 66.7}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "시각디자인", "학과명": "시각디자인전공", "졸업자_계": 50, "취업률_계": 65.1, "취업자_합계_계": 28, "취업자_교외취업자_계": 22, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 1, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 5, "진학률_계": 2.0, "1차 유지취업률_계": 86.4, "2차 유지취업률_계": 81.8, "3차 유지취업률_계": 81.8, "4차 유지취업률_계": 77.3}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "패션디자인", "학과명": "패션디자인전공", "졸업자_계": 55, "취업률_계": 60.4, "취업자_합계_계": 29, "취업자_교외취업자_계": 23, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 4, "진학률_계": 0.0, "1차 유지취업률_계": 91.3, "2차 유지취업률_계": 82.6, "3차 유지취업률_계": 73.9, "4차 유지취업률_계": 73.9}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "기타디자인", "학과명": "공예디자인전공", "졸업자_계": 31, "취업률_계": 37.9, "취업자_합계_계": 11, "취업자_교외취업자_계": 9, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 6.5, "1차 유지취업률_계": 88.9, "2차 유지취업률_계": 88.9, "3차 유지취업률_계": 77.8, "4차 유지취업률_계": 77.8}, {"대계열": "예체능계열", "중계열": "디자인", "소계열": "기타디자인", "학과명": "텍스타일디자인전공", "졸업자_계": 34, "취업률_계": 61.8, "취업자_합계_계": 21, "취업자_교외취업자_계": 21, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 0, "진학률_계": 0.0, "1차 유지취업률_계": 95.2, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 52.4, "4차 유지취업률_계": 47.6}, {"대계열": "예체능계열", "중계열": "응용예술", "소계열": "사진ㆍ만화", "학과명": "영상애니메이션전공", "졸업자_계": 37, "취업률_계": 36.1, "취업자_합계_계": 13, "취업자_교외취업자_계": 10, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 1, "진학률_계": 0.0, "1차 유지취업률_계": 80.0, "2차 유지취업률_계": 70.0, "3차 유지취업률_계": 60.0, "4차 유지취업률_계": 60.0}, {"대계열": "예체능계열", "중계열": "응용예술", "소계열": "사진ㆍ만화", "학과명": "사진미디어전공", "졸업자_계": 38, "취업률_계": 48.5, "취업자_합계_계": 16, "취업자_교외취업자_계": 11, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 2, "진학률_계": 10.5, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 81.8, "4차 유지취업률_계": 72.7}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "무용", "학과명": "무용전공", "졸업자_계": 28, "취업률_계": 76.9, "취업자_합계_계": 20, "취업자_교외취업자_계": 1, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 10, "진학률_계": 7.1, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 100.0, "3차 유지취업률_계": 100.0, "4차 유지취업률_계": 0.0}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "사회체육학전공", "졸업자_계": 75, "취업률_계": 70.8, "취업자_합계_계": 46, "취업자_교외취업자_계": 35, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 4, "취업자_프리랜서_계": 7, "진학률_계": 6.7, "1차 유지취업률_계": 88.6, "2차 유지취업률_계": 80.0, "3차 유지취업률_계": 77.1, "4차 유지취업률_계": 74.3}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "체육학전공", "졸업자_계": 63, "취업률_계": 66.7, "취업자_합계_계": 38, "취업자_교외취업자_계": 26, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 11, "진학률_계": 4.8, "1차 유지취업률_계": 84.6, "2차 유지취업률_계": 84.6, "3차 유지취업률_계": 73.1, "4차 유지취업률_계": 73.1}, {"대계열": "예체능계열", "중계열": "무용ㆍ체육", "소계열": "체육", "학과명": "태권도학과", "졸업자_계": 69, "취업률_계": 60.0, "취업자_합계_계": 36, "취업자_교외취업자_계": 24, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 11, "진학률_계": 1.4, "1차 유지취업률_계": 83.3, "2차 유지취업률_계": 79.2, "3차 유지취업률_계": 70.8, "4차 유지취업률_계": 66.7}, {"대계열": "예체능계열", "중계열": "미술ㆍ조형", "소계열": "순수미술", "학과명": "회화전공", "졸업자_계": 37, "취업률_계": 45.7, "취업자_합계_계": 16, "취업자_교외취업자_계": 13, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 0, "취업자_프리랜서_계": 3, "진학률_계": 5.4, "1차 유지취업률_계": 69.2, "2차 유지취업률_계": 61.5, "3차 유지취업률_계": 38.5, "4차 유지취업률_계": 38.5}, {"대계열": "예체능계열", "중계열": "연극ㆍ영화", "소계열": "연극ㆍ영화", "학과명": "연극뮤지컬전공", "졸업자_계": 21, "취업률_계": 73.7, "취업자_합계_계": 14, "취업자_교외취업자_계": 8, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 1, "진학률_계": 4.8, "1차 유지취업률_계": 62.5, "2차 유지취업률_계": 62.5, "3차 유지취업률_계": 62.5, "4차 유지취업률_계": 62.5}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기악", "학과명": "관현악전공", "졸업자_계": 58, "취업률_계": 39.5, "취업자_합계_계": 17, "취업자_교외취업자_계": 9, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 6, "진학률_계": 22.4, "1차 유지취업률_계": 66.7, "2차 유지취업률_계": 66.7, "3차 유지취업률_계": 66.7, "4차 유지취업률_계": 66.7}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기악", "학과명": "피아노전공", "졸업자_계": 48, "취업률_계": 63.6, "취업자_합계_계": 21, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 1, "취업자_프리랜서_계": 7, "진학률_계": 31.3, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 75.0, "4차 유지취업률_계": 75.0}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "성악", "학과명": "성악전공", "졸업자_계": 42, "취업률_계": 72.0, "취업자_합계_계": 18, "취업자_교외취업자_계": 9, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 7, "진학률_계": 33.3, "1차 유지취업률_계": 55.6, "2차 유지취업률_계": 33.3, "3차 유지취업률_계": 33.3, "4차 유지취업률_계": 22.2}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "작곡", "학과명": "작곡전공", "졸업자_계": 21, "취업률_계": 46.7, "취업자_합계_계": 7, "취업자_교외취업자_계": 4, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 2, "취업자_프리랜서_계": 1, "진학률_계": 9.5, "1차 유지취업률_계": 100.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 50.0, "4차 유지취업률_계": 50.0}, {"대계열": "예체능계열", "중계열": "음악", "소계열": "기타음악", "학과명": "실용음악음향전공", "졸업자_계": 45, "취업률_계": 65.9, "취업자_합계_계": 29, "취업자_교외취업자_계": 12, "취업자_교내취업자_계": 0, "취업자_해외취업자_계": 0, "취업자_1인창(사)업자_계": 3, "취업자_프리랜서_계": 13, "진학률_계": 2.2, "1차 유지취업률_계": 75.0, "2차 유지취업률_계": 75.0, "3차 유지취업률_계": 58.3, "4차 유지취업률_계": 58.3}]};
+const YEARS = [2022, 2023, 2024];
+
+let activeYear = YEARS[YEARS.length - 1];
+let seriesFilter = 'ALL';
+let sortCol = '취업률_계';
+let sortDir = -1;
+let currentPage = 1;
+const PAGE_SIZE = 10;
+let initialAnim = true;
+
+let barInst = null, donutInst = null, retInst = null;
+
+const DONUT_COLORS = ['#2563eb','#0d9488','#8b5cf6','#f59e0b','#fbbf24'];
+const DONUT_LABELS = ['교외취업','교내취업','해외취업','프리랜서','1인창업'];
+const DONUT_KEYS   = ['취업자_교외취업자_계','취업자_교내취업자_계','취업자_해외취업자_계','취업자_프리랜서_계','취업자_1인창(사)업자_계'];
+const RET_KEYS = ['1차 유지취업률_계','2차 유지취업률_계','3차 유지취업률_계','4차 유지취업률_계'];
+const RET_LABELS = ['1차 (1년)','2차 (2년)','3차 (3년)','4차 (4년)'];
+const YEAR_COLORS = { 2022: '#9ca3af', 2023: '#0d9488', 2024: '#2563eb' };
+
+const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+const fmtRate = v => v == null ? '—' : v.toFixed(1) + '%';
+const fmtInt = v => v == null ? '—' : Number(v).toLocaleString();
+
+function yearRows(withRate = true) {
+  const rows = DATA[activeYear] || [];
+  return withRate ? rows.filter(r => r.취업률_계 != null) : rows;
+}
+function filteredRows() {
+  let rows = yearRows(true);
+  if (seriesFilter !== 'ALL') rows = rows.filter(r => r.대계열 === seriesFilter);
+  return rows;
+}
+
+// ── tabs ──
+function buildTabs() {
+  const c = document.getElementById('yearTabs');
+  c.innerHTML = '';
+  YEARS.forEach(y => {
+    const b = document.createElement('button');
+    b.className = 'year-tab' + (y === activeYear ? ' active' : '');
+    b.textContent = y;
+    b.onclick = () => switchYear(y);
+    c.appendChild(b);
+  });
+}
+
+// ── filter pills ──
+function buildPills() {
+  const all = [...new Set((DATA[activeYear]||[]).map(r=>r.대계열).filter(Boolean))].sort();
+  const c = document.getElementById('filterPills');
+  c.innerHTML = '';
+  ['ALL', ...all].forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'pill' + (s === seriesFilter ? ' active' : '');
+    b.textContent = s === 'ALL' ? '전체' : s;
+    b.onclick = () => {
+      seriesFilter = s;
+      buildPills();
+      currentPage = 1;
+      renderTable();
+      updateDonut(false);
+    };
+    c.appendChild(b);
+  });
+}
+
+// ── KPI ──
+function updateKPI() {
+  const rows = yearRows(true);
+  const total = (DATA[activeYear] || []).length;
+  const avgR = avg(rows.map(r => r.취업률_계));
+  const sorted = [...rows].sort((a,b) => b.취업률_계 - a.취업률_계);
+  const best = sorted[0], worst = sorted[sorted.length - 1];
+
+  document.getElementById('kpiTotal').textContent = total;
+  document.getElementById('kpiAvg').textContent = fmtRate(avgR);
+  document.getElementById('kpiBestName').textContent = best ? best.학과명 : '—';
+  document.getElementById('kpiBestRate').textContent = best ? fmtRate(best.취업률_계) : '';
+  document.getElementById('kpiWorstName').textContent = worst ? worst.학과명 : '—';
+  document.getElementById('kpiWorstRate').textContent = worst ? fmtRate(worst.취업률_계) : '';
+  document.getElementById('donutYear').textContent = activeYear + '년';
+}
+
+// ── bar chart (vertical) ──
+const barLabelPlugin = {
+  id: 'barLabels',
+  afterDatasetsDraw(chart) {
+    const ds = chart.getDatasetMeta(0);
+    if (!ds || !ds.data) return;
+    const ctx = chart.ctx;
+    const values = chart.data.datasets[0].data;
+    ctx.save();
+    ctx.fillStyle = '#111827';
+    ctx.font = '700 12px "Noto Sans KR"';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ds.data.forEach((bar, i) => {
+      const v = values[i];
+      if (v == null) return;
+      ctx.fillText(v.toFixed(1), bar.x, bar.y - 6);
+    });
+    ctx.restore();
+  }
+};
+
+function updateBarChart(animate=true) {
+  const rows = yearRows(true);
+  const map = {};
+  rows.forEach(r => {
+    if (!r.대계열) return;
+    (map[r.대계열] = map[r.대계열] || []).push(r.취업률_계);
+  });
+  const labels = Object.keys(map).sort();
+  const values = labels.map(s => parseFloat(avg(map[s]).toFixed(1)));
+
+  if (barInst) { barInst.destroy(); barInst = null; }
+  const ctx = document.getElementById('barChart').getContext('2d');
+  barInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: '#2563eb',
+        hoverBackgroundColor: '#1d4ed8',
+        borderRadius: 6,
+        barPercentage: 0.65,
+        categoryPercentage: 0.8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: animate ? { duration: 800, easing: 'easeOutQuart' } : { duration: 400 },
+      layout: { padding: { top: 20 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: c => ' 평균 취업률: ' + c.parsed.y.toFixed(1) + '%' }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6b7280', font: { size: 12, family: 'Noto Sans KR' } }
+        },
+        y: {
+          min: 0, max: 100,
+          grid: { color: '#e5e7eb' },
+          border: { display: false },
+          ticks: { color: '#9ca3af', font: { size: 11 }, callback: v => v + '%' }
+        }
+      }
+    },
+    plugins: [barLabelPlugin]
+  });
+}
+
+// ── donut ──
+function updateDonut(animate=true) {
+  const rows = filteredRows().length ? filteredRows() : yearRows(false);
+  const data = DONUT_KEYS.map(k => rows.reduce((s,r) => s + (r[k] || 0), 0));
+  const total = data.reduce((a,b)=>a+b,0);
+
+  const leg = document.getElementById('donutLegend');
+  leg.innerHTML = '';
+  DONUT_LABELS.forEach((lbl,i) => {
+    const pct = total ? ((data[i]/total)*100).toFixed(1) : '0.0';
+    const item = document.createElement('div');
+    item.className = 'donut-legend-item';
+    item.innerHTML =
+      '<span class="donut-dot" style="background:'+DONUT_COLORS[i]+'"></span>' +
+      '<span class="donut-lbl">'+lbl+'</span>' +
+      '<span class="donut-val">'+pct+'%</span>';
+    leg.appendChild(item);
+  });
+
+  if (donutInst) { donutInst.destroy(); donutInst = null; }
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  donutInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: DONUT_LABELS,
+      datasets: [{
+        data,
+        backgroundColor: DONUT_COLORS,
+        borderColor: '#fff',
+        borderWidth: 2,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      animation: animate ? { animateRotate: true, animateScale: false, duration: 1000, easing: 'easeOutQuart' } : { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: c => ' '+c.label+': '+Number(c.parsed).toLocaleString()+'명' }
+        }
+      }
+    }
+  });
+}
+
+// ── retention (3 years) ──
+const retLabelPlugin = {
+  id: 'retLabels',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    ctx.save();
+    chart.data.datasets.forEach((ds, di) => {
+      if (!chart.isDatasetVisible(di)) return;
+      const meta = chart.getDatasetMeta(di);
+      ctx.fillStyle = ds.borderColor;
+      ctx.font = '600 10px "Noto Sans KR"';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      meta.data.forEach((pt, i) => {
+        const v = ds.data[i];
+        if (v == null) return;
+        ctx.fillText(v.toFixed(1), pt.x, pt.y - 8);
+      });
+    });
+    ctx.restore();
+  }
+};
+
+function updateRetention(animate=true) {
+  const rows = (DATA[activeYear] || []).filter(r => r['취업률_계'] != null);
+  const data = RET_KEYS.map(k => {
+    const v = rows.map(r => r[k]).filter(x => x != null);
+    return v.length ? parseFloat(avg(v).toFixed(1)) : null;
+  });
+  const color = YEAR_COLORS[activeYear] || '#2563eb';
+  const datasets = [{
+    label: activeYear + '년',
+    data,
+    borderColor: color,
+    backgroundColor: color,
+    pointRadius: 5,
+    pointHoverRadius: 7,
+    pointBackgroundColor: color,
+    pointBorderColor: '#fff',
+    pointBorderWidth: 2,
+    borderWidth: 3,
+    tension: 0.25,
+    fill: false,
+  }];
+
+  if (retInst) { retInst.destroy(); retInst = null; }
+  const ctx = document.getElementById('retentionChart').getContext('2d');
+
+  const animOpt = animate ? {
+    duration: 1000,
+    easing: 'easeOutQuart',
+    x: {
+      type: 'number',
+      easing: 'linear',
+      duration: 1000,
+      from: NaN,
+      delay(c) {
+        if (c.type !== 'data' || c.xStarted) return 0;
+        c.xStarted = true;
+        return c.dataIndex * (1000 / RET_LABELS.length);
+      }
+    },
+    y: {
+      type: 'number',
+      easing: 'linear',
+      duration: 0
+    }
+  } : { duration: 400 };
+
+  retInst = new Chart(ctx, {
+    type: 'line',
+    data: { labels: RET_LABELS, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: animOpt,
+      layout: { padding: { top: 24, right: 8 } },
+      plugins: {
+        legend: {
+          position: 'top',
+          align: 'end',
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            boxWidth: 8,
+            color: '#6b7280',
+            font: { size: 12, family: 'Noto Sans KR' }
+          }
+        },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6b7280', font: { size: 11 } }
+        },
+        y: {
+          min: 50, max: 100,
+          grid: { color: '#e5e7eb' },
+          border: { display: false },
+          ticks: { color: '#9ca3af', callback: v => v + '%' }
+        }
+      }
+    },
+    plugins: [retLabelPlugin]
+  });
+}
+
+// ── table ──
+function renderTable() {
+  let rows = filteredRows();
+  rows = [...rows].sort((a,b) => {
+    const av = a[sortCol], bv = b[sortCol];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === 'string') return sortDir * av.localeCompare(bv,'ko');
+    return sortDir * (av - bv);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+  const tbody = document.getElementById('tableBody');
+  if (!pageRows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:#9ca3af;">데이터 없음</td></tr>';
+  } else {
+    tbody.innerHTML = pageRows.map(r => `
+      <tr>
+        <td>${r.학과명 || '—'}</td>
+        <td class="td-num col-grad">${fmtInt(r.졸업자_계)}</td>
+        <td class="td-num">${fmtInt(r.취업자_합계_계)}</td>
+        <td class="td-rate">${fmtRate(r.취업률_계)}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('pageInfo').textContent = currentPage + '/' + totalPages;
+  document.getElementById('prevPage').disabled = currentPage <= 1;
+  document.getElementById('nextPage').disabled = currentPage >= totalPages;
+
+  ['학과명','졸업자_계','취업자_합계_계','취업률_계'].forEach(k => {
+    const el = document.getElementById('th-'+k);
+    if (el) el.classList.remove('sorted-asc','sorted-desc');
+  });
+  const th = document.getElementById('th-'+sortCol);
+  if (th) th.classList.add(sortDir > 0 ? 'sorted-asc' : 'sorted-desc');
+}
+
+document.querySelectorAll('thead th[data-col]').forEach(th => {
+  th.onclick = () => {
+    const col = th.getAttribute('data-col');
+    if (sortCol === col) sortDir *= -1;
+    else { sortCol = col; sortDir = -1; }
+    renderTable();
+  };
+});
+
+// pagination
+document.getElementById('prevPage').onclick = () => { if (currentPage > 1) { currentPage--; renderTable(); } };
+document.getElementById('nextPage').onclick = () => { currentPage++; renderTable(); };
+
+// ── year switch with fade ──
+function switchYear(year) {
+  if (year === activeYear) return;
+  activeYear = year;
+  seriesFilter = 'ALL';
+  sortCol = '취업률_계';
+  sortDir = -1;
+  currentPage = 1;
+
+  document.querySelectorAll('.year-tab').forEach(t =>
+    t.classList.toggle('active', parseInt(t.textContent) === year));
+
+  const cards = document.querySelectorAll('.kpi-card, .row .card');
+  cards.forEach(c => {
+    c.classList.remove('fade-cycle');
+    void c.offsetWidth;
+    c.classList.add('fade-cycle');
+  });
+
+  updateKPI();
+  buildPills();
+  updateBarChart(false);
+  renderTable();
+  updateDonut(false);
+  updateRetention(false);
+}
+
+// ── sidebar mobile toggle ──
+document.getElementById('hamburger').onclick = () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+};
+document.getElementById('sidebarOverlay').onclick = () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+};
+
+// ── init ──
+buildTabs();
+buildPills();
+updateKPI();
+updateBarChart(true);
+renderTable();
+updateDonut(true);
+updateRetention(true);
+</script>
+</body>
+</html>
